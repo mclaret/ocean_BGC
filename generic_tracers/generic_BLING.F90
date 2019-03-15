@@ -1379,12 +1379,12 @@ write (stdlogunit, generic_bling_nml)
 
     vardesc_temp = vardesc&
     ("fpo13c","PO13C sinking flux at layer bottom",'h','L','s','mol m-2 s-1','f') 
-    bling%id_fpo13c = register_diag_field(package_name, vardesc_temp%name, axes(1:3),&
+    bling%id_fpo13c = register_diag_field(package_name, vardesc_temp%name, axesTi(1:1),&
          init_time, vardesc_temp%longname,vardesc_temp%units, missing_value = missing_value1)
 
     vardesc_temp = vardesc&
     ("fca13co3","Ca13CO3 sinking flux at layer bottom",'h','L','s','mol m-2 s-1','f') 
-    bling%id_fca13co3 = register_diag_field(package_name, vardesc_temp%name, axes(1:3),&
+    bling%id_fca13co3 = register_diag_field(package_name, vardesc_temp%name, axesTi(1:1),&
          init_time, vardesc_temp%longname,vardesc_temp%units, missing_value = missing_value1)
 
     vardesc_temp = vardesc&
