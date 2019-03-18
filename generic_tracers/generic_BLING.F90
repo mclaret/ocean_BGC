@@ -232,9 +232,10 @@ module generic_BLING
   logical :: do_po4_pre         = .true.
   logical :: bury_caco3         = .false. ! Requires do_carbon = .true.
   logical :: bury_pop           = .false. ! Requires do_carbon = .true.
+  real    :: as_coeff           = 9.36e-07 
 
 namelist /generic_bling_nml/ co2_calc, do_13c, do_14c, do_carbon, do_carbon_pre, &
-  do_po4_pre, bury_caco3, bury_pop
+  do_po4_pre, bury_caco3, bury_pop, as_coeff
 
   !
   !The following two types contain all the parameters and arrays used in this module.
@@ -864,7 +865,7 @@ call close_file (ioun)
 write (stdoutunit,'(/)')
 write (stdoutunit, generic_bling_nml)
 write (stdlogunit, generic_bling_nml)
- 
+
   if (trim(co2_calc) == 'ocmip2') then
     write (stdoutunit,*) trim(note_header), 'Using FMS OCMIP2 CO2 routine'
   else if (trim(co2_calc) == 'mocsy') then
@@ -2505,7 +2506,8 @@ write (stdlogunit, generic_bling_nml)
          flux_gas_name  = 'o2_flux',                                &
          flux_gas_type  = 'air_sea_gas_flux_generic',               &
          flux_gas_molwt = WTMO2,                                    &
-         flux_gas_param = (/ 6.972e-07, 9.7561e-06 /),               &
+         !flux_gas_param = (/ 6.972e-07, 9.7561e-06 /),               &
+         flux_gas_param = (/ as_coeff, 9.7561e-06 /),               &
          flux_gas_restart_file  = 'ocean_bling_airsea_flux.res.nc' )
 
     !
@@ -2588,7 +2590,8 @@ write (stdlogunit, generic_bling_nml)
          flux_gas_name  = 'co2_flux',                &
          flux_gas_type  = 'air_sea_gas_flux_generic',&
          flux_gas_molwt = WTMCO2,                    &
-         flux_gas_param = (/ 6.972e-07, 9.7561e-06 /),&
+         !flux_gas_param = (/ 6.972e-07, 9.7561e-06 /),&
+         flux_gas_param = (/ as_coeff, 9.7561e-06 /),&
          flux_gas_restart_file  = 'ocean_bling_airsea_flux.res.nc', &
          flux_runoff    = .true.,                    &
          flux_param     = (/12.011e-03  /),          &
@@ -2626,7 +2629,7 @@ write (stdlogunit, generic_bling_nml)
          flux_gas_name  = 'co2_flux',                &
          flux_gas_type  = 'air_sea_gas_flux_generic',&
          flux_gas_molwt = WTMCO2,                    &
-         flux_gas_param = (/ 6.972e-07, 9.7561e-06 /),&
+         flux_gas_param = (/ as_coeff, 9.7561e-06 /),&
          flux_gas_restart_file  = 'ocean_bling_airsea_flux.res.nc', &
          flux_runoff    = .false.,                   &
          flux_param     = (/12.011e-03  /),          &
@@ -2681,7 +2684,7 @@ write (stdlogunit, generic_bling_nml)
            flux_gas_name  = 'co2_sat_flux',          &
            flux_gas_type  = 'air_sea_gas_flux',      &
            flux_gas_molwt = WTMCO2,                  &
-           flux_gas_param = (/ 6.972e-07, 9.7561e-06 /),&
+           flux_gas_param = (/ as_coeff, 9.7561e-06 /),&
            flux_gas_restart_file  = 'ocean_bling_airsea_flux.res.nc', &
            flux_param     = (/12.011e-03  /),        &
            init_value     = 0.001)
@@ -2709,7 +2712,7 @@ write (stdlogunit, generic_bling_nml)
              flux_gas_type  = 'air_sea_gas_flux_generic',              &
              flux_gas_name  = 'c13o2_flux',                            &
              flux_gas_molwt = 45.00995,                                &
-             flux_gas_param = (/ 6.972e-07, 9.7561e-06 /),             &  ! Wanninkhof 2014: 0.251 cm/h
+             flux_gas_param = (/ as_coeff, 9.7561e-06 /),             &  ! Wanninkhof 2014: 0.251 cm/h
              flux_gas_restart_file  = 'ocean_bling_airsea_flux.res.nc',&
              flux_param     = (/ 13.e-03 /),                           &
              flux_runoff    = .true.,                                  &
@@ -2743,7 +2746,7 @@ write (stdlogunit, generic_bling_nml)
          flux_gas_name  = 'c14o2_flux',                 &
          flux_gas_type  = 'air_sea_gas_flux',           &
          flux_gas_molwt = WTMCO2,                       &
-         flux_gas_param = (/ 6.972e-07, 9.7561e-06 /),   &
+         flux_gas_param = (/ as_coeff, 9.7561e-06 /),   &
          flux_gas_restart_file  = 'ocean_bling_airsea_flux.res.nc', &
          flux_param     = (/14.e-03  /),                &
          flux_bottom    = .true.,                       &
