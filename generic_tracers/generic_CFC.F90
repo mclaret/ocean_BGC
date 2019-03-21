@@ -127,11 +127,22 @@ module generic_CFC
 
   type generic_CFC_type
     integer :: &
-      id_fgcfc11      = -1, &
-      id_fgcfc12      = -1
+      id_fgcfc11      = -1,    &
+      id_fgcfc12      = -1,    &
+      id_wc_vert_int_cfc11 = -1, &
+      id_wc_vert_int_cfc12 = -1
+
+    real, dimension(:,:), ALLOCATABLE :: &
+      wc_vert_int_cfc11, &
+      wc_vert_int_cfc12
+
     real, dimension (:,:), pointer :: &
       stf_gas_cfc11, &
       stf_gas_cfc12
+
+    real, dimension(:,:,:,:), pointer :: &
+      p_cfc11, &
+      p_cfc12
 
   end type generic_CFC_type
 
@@ -178,7 +189,7 @@ contains
     call user_add_params
 
     !Allocate and initiate all the private work arrays used by this module.
-    !    call user_allocate_arrays !None for CFC module currently
+    call user_allocate_arrays
 
   end subroutine generic_CFC_init
 
@@ -217,13 +228,32 @@ contains
          init_time, vardesc_temp%longname,vardesc_temp%units, missing_value = missing_value1, &
          standard_name="surface_downward_mole_flux_of_cfc12")
 
+    vardesc_temp = vardesc("wc_vert_int_cfc11","Total CFC11 vertical integral",'h','1','s','mol m-2','f')
+    cfc%id_wc_vert_int_cfc11 = register_diag_field(package_name, vardesc_temp%name, axes(1:2),&
+         init_time, vardesc_temp%longname,vardesc_temp%units, missing_value = missing_value1)
+
+    vardesc_temp = vardesc("wc_vert_int_cfc12","Total CFC12 vertical integral",'h','1','s','mol m-2','f')
+    cfc%id_wc_vert_int_cfc12 = register_diag_field(package_name, vardesc_temp%name, axes(1:2),&
+         init_time, vardesc_temp%longname,vardesc_temp%units, missing_value = missing_value1)
+
   end subroutine generic_CFC_register_diag
 
 
   subroutine user_allocate_arrays
-    !Allocate all the private arrays.
-    !None for CFC module currently
+    integer :: isc,iec,jsc,jec,isd,ied,jsd,jed,nk,ntau,n
+    call g_tracer_get_common(isc,iec,jsc,jec,isd,ied,jsd,jed,nk,ntau) 
+
+    allocate(cfc%wc_vert_int_cfc11(isd:ied, jsd:jed))  ; cfc%wc_vert_int_cfc11=0.0
+    allocate(cfc%wc_vert_int_cfc12(isd:ied, jsd:jed))  ; cfc%wc_vert_int_cfc12=0.0
+
   end subroutine user_allocate_arrays
+
+  subroutine user_deallocate_arrays
+
+    deallocate(cfc%wc_vert_int_cfc11)
+    deallocate(cfc%wc_vert_int_cfc12)
+
+  end subroutine user_deallocate_arrays
 
   !
   !   This is an internal sub, not a public interface.
@@ -440,6 +470,7 @@ contains
 
     character(len=fm_string_len), parameter :: sub_name = 'generic_SF6_update_from_source'
     integer :: isc,iec, jsc,jec,isd,ied,jsd,jed,nk,ntau 
+    integer :: i, j, k
     real, dimension(:,:,:) ,pointer :: grid_tmask
     integer, dimension(:,:),pointer :: mask_coast, grid_kmt
 
@@ -451,6 +482,20 @@ contains
     call g_tracer_get_pointer(tracer_list,'cfc11','stf_gas',cfc%stf_gas_cfc11)
     call g_tracer_get_pointer(tracer_list,'cfc12','stf_gas',cfc%stf_gas_cfc12)
 
+    call g_tracer_get_pointer(tracer_list,'cfc11','field',  cfc%p_cfc11)
+    call g_tracer_get_pointer(tracer_list,'cfc12','field',  cfc%p_cfc12)
+
+    !-- calculate water column vertical integrals
+    do j = jsc, jec ; do i = isc, iec !{
+       cfc%wc_vert_int_cfc11(i,j) = 0.0
+       cfc%wc_vert_int_cfc12(i,j) = 0.0
+    enddo; enddo !} i,j
+
+    do j = jsc, jec ; do i = isc, iec ; do k = 1, nk  !{
+       cfc%wc_vert_int_cfc11(i,j) = cfc%wc_vert_int_cfc11(i,j) + (cfc%p_cfc11(i,j,k,tau) * rho_dzt(i,j,k))
+       cfc%wc_vert_int_cfc12(i,j) = cfc%wc_vert_int_cfc12(i,j) + (cfc%p_cfc12(i,j,k,tau) * rho_dzt(i,j,k))
+    enddo; enddo; enddo  !} i,j,k
+
     if (cfc%id_fgcfc11 .gt. 0)            &
         used = g_send_data(cfc%id_fgcfc11,  cfc%stf_gas_cfc11,   &
         model_time, rmask = grid_tmask(:,:,1),&
@@ -460,6 +505,16 @@ contains
         used = g_send_data(cfc%id_fgcfc12,  cfc%stf_gas_cfc12,   &
         model_time, rmask = grid_tmask(:,:,1),&
         is_in=isc, js_in=jsc, ie_in=iec, je_in=jec)
+
+    if (cfc%id_wc_vert_int_cfc11 .gt. 0)       &
+       used = g_send_data(cfc%id_wc_vert_int_cfc11, cfc%wc_vert_int_cfc11, &
+       model_time, rmask = grid_tmask(:,:,1),&
+       is_in=isc, js_in=jsc, ie_in=iec, je_in=jec)
+
+    if (cfc%id_wc_vert_int_cfc12 .gt. 0)       &
+       used = g_send_data(cfc%id_wc_vert_int_cfc12, cfc%wc_vert_int_cfc12, &
+       model_time, rmask = grid_tmask(:,:,1),&
+       is_in=isc, js_in=jsc, ie_in=iec, je_in=jec)
 
     return
   end subroutine generic_CFC_update_from_source
@@ -650,6 +705,8 @@ contains
 
   subroutine generic_CFC_end
     character(len=fm_string_len), parameter :: sub_name = 'generic_CFC_end'
+
+    call user_deallocate_arrays
 
   end subroutine generic_CFC_end
 
