@@ -202,6 +202,10 @@ contains
          init_time, vardesc_temp%longname,vardesc_temp%units, missing_value = missing_value1, &
          standard_name="surface_downward_mole_flux_of_sf6")
 
+    vardesc_temp = vardesc("wc_vert_int_sf6","Total SF6 vertical integral",'h','1','s','mol m-2','f')
+    sf6%id_wc_vert_int_sf6 = register_diag_field(package_name, vardesc_temp%name, axes(1:2),&
+         init_time, vardesc_temp%longname,vardesc_temp%units, missing_value = missing_value1)
+
   end subroutine generic_SF6_register_diag
 
 
@@ -212,6 +216,12 @@ contains
     allocate(sf6%wc_vert_int_sf6(isd:ied, jsd:jed))  ; sf6%wc_vert_int_sf6=0.0
 
   end subroutine user_allocate_arrays
+
+  subroutine user_deallocate_arrays
+
+    deallocate(sf6%wc_vert_int_sf6)
+
+  end subroutine user_deallocate_arrays
 
   !
   !   This is an internal sub, not a public interface.
@@ -561,6 +571,8 @@ contains
 
   subroutine generic_SF6_end
     character(len=fm_string_len), parameter :: sub_name = 'generic_SF6_end'
+
+    call user_deallocate_arrays
 
   end subroutine generic_SF6_end
 
