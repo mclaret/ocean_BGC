@@ -61,10 +61,12 @@ module generic_SF6
   public generic_SF6_update_from_source
   public generic_SF6_set_boundary_values
   public generic_SF6_end
+  public as_coeff_sf6
 
   !The following logical for using this module is overwritten 
   ! by generic_tracer_nml namelist
   logical, save :: do_generic_SF6 = .false.
+  real   , save :: as_coeff_sf6   = 9.36e-07 ! [m/s] air-sea gas transfer coefficient. Default: OCMIP2 value of 0.337 cm/hr
 
   real, parameter :: epsln=1.0e-30
   real, parameter :: missing_value1=-1.0e+10
@@ -338,7 +340,7 @@ contains
          prog = .true.,                                           &
          flux_gas = .true.,                                       &
          flux_gas_type  = 'air_sea_gas_flux_generic',             &
-         flux_gas_param = (/ 9.36e-07, 9.7561e-06 /),             &
+         flux_gas_param = (/ as_coeff_sf6, 9.7561e-06 /),         &
          flux_gas_restart_file  = 'ocmip_sf6_airsea_flux.res.nc', &
          standard_name = "mole_concentration_of_sulfur_hexafluoride_in_sea_water", &
          diag_field_units = 'mol m-3', &

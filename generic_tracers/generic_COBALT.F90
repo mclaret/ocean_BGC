@@ -168,9 +168,11 @@ module generic_COBALT
   public generic_COBALT_update_from_bottom
   public generic_COBALT_set_boundary_values
   public generic_COBALT_end
+  public as_coeff_cobalt
 
   !The following logical for using this module is overwritten 
   logical, save :: do_generic_COBALT = .false.
+  real,    save :: as_coeff_cobalt   = 9.36e-07 ! [m/s] air-sea gas transfer coefficient. Default: OCMIP2 value of 0.337 cm/hr
 
   real, parameter :: sperd = 24.0 * 3600.0
   real, parameter :: spery = 365.25 * sperd
@@ -216,7 +218,7 @@ namelist /generic_COBALT_nml/ do_14c, co2_calc, debug, do_nh3_atm_ocean_exchange
   ! the vast majority of all variables used in this module. 
 
   type phytoplankton
-     real :: alpha,   &			
+     real :: alpha,   &
           fe_2_n_max,    &
           p_2_n_static,  &
           k_fe_2_n,      &
@@ -5731,7 +5733,7 @@ write (stdlogunit, generic_COBALT_nml)
          flux_gas_name  = 'co2_flux',                                  &
          flux_gas_type  = 'air_sea_gas_flux_generic',                  &
          flux_gas_molwt = WTMCO2,                                      &
-         flux_gas_param = (/ 9.36e-07, 9.7561e-06 /),                  &
+         flux_gas_param = (/ as_coeff_cobalt, 9.7561e-06 /),           &
          ! Uncomment for "no mass change" check
          ! flux_gas_param = (/ 0.0, 0.0 /),                            &
          flux_gas_restart_file  = 'ocean_cobalt_airsea_flux.res.nc',   &
@@ -5942,8 +5944,8 @@ write (stdlogunit, generic_COBALT_nml)
          flux_gas_name  = 'o2_flux',                                   &
          flux_gas_type  = 'air_sea_gas_flux_generic',                  &
          flux_gas_molwt = WTMO2,                                       &
-         flux_gas_param = (/ 9.36e-07, 9.7561e-06 /),                  &
-         flux_gas_restart_file  = 'ocean_cobalt_airsea_flux.res.nc',    &
+         flux_gas_param = (/ as_coeff_cobalt, 9.7561e-06 /),           &
+         flux_gas_restart_file  = 'ocean_cobalt_airsea_flux.res.nc',   &
          flux_bottom= .true.             )
     !
     !    Pdet (Sinking detrital/particulate Phosphorus)
@@ -6075,7 +6077,7 @@ write (stdlogunit, generic_COBALT_nml)
          flux_gas_name  = 'c14o2_flux',                 &
          flux_gas_type  = 'air_sea_gas_flux',           &
          flux_gas_molwt = WTMCO2,                       &
-         flux_gas_param = (/ 9.36e-07, 9.7561e-06 /),   &
+         flux_gas_param = (/ as_coeff_cobalt, 9.7561e-06 /),   &
          flux_gas_restart_file  = 'ocean_cobalt_airsea_flux.res.nc', &
          flux_runoff= .true.,                           &
          flux_param     = (/14.e-03  /),                &

@@ -45,8 +45,9 @@ module generic_CFC
   use coupler_types_mod, only: coupler_2d_bc_type
   use field_manager_mod, only: fm_string_len
   use mpp_mod, only : mpp_error, NOTE, WARNING, FATAL, stdout
-  use time_manager_mod, only : time_type
-  use fm_util_mod,       only: fm_util_start_namelist, fm_util_end_namelist  
+  use time_manager_mod, only: time_type
+  use fm_util_mod,      only: fm_util_start_namelist, fm_util_end_namelist  
+  use fms_mod,          only: open_namelist_file, check_nml_error, close_file
 
   use g_tracer_utils, only : g_tracer_type,g_tracer_start_param_list,g_tracer_end_param_list
   use g_tracer_utils, only : g_tracer_add,g_tracer_add_param, g_tracer_set_files
@@ -71,10 +72,13 @@ module generic_CFC
   public generic_CFC_update_from_source
   public generic_CFC_set_boundary_values
   public generic_CFC_end
+  public as_coeff_cfc
 
-  !The following logical for using this module is overwritten 
+  !The following logical for using this module 
+  ! and the as_coeff are overwritten 
   ! by generic_tracer_nml namelist
   logical, save :: do_generic_CFC = .false.
+  real, save    :: as_coeff_cfc   = 9.36e-07 ! [m/s] air-sea gas transfer coefficient. Default: OCMIP2 value of 0.337 cm/hr
 
   real, parameter :: epsln=1.0e-30
   real, parameter :: missing_value1=-1.0e+10
@@ -158,8 +162,6 @@ contains
     !Specify all prognostic and diagnostic tracers of this modules.
     call user_add_tracers(tracer_list)
 
-    
-    
   end subroutine generic_CFC_register
 
   ! <SUBROUTINE NAME="generic_CFC_init">
@@ -355,8 +357,6 @@ contains
     !Block Ends: g_tracer_add_param
     !===========
 
-
-
   end subroutine user_add_params
 
   !
@@ -366,9 +366,7 @@ contains
   subroutine user_add_tracers(tracer_list)
     type(g_tracer_type), pointer :: tracer_list
 
-
     character(len=fm_string_len), parameter :: sub_name = 'user_add_tracers'
-
 
     call g_tracer_start_param_list(package_name)!nnz: Does this append?
     call g_tracer_add_param('ice_restart_file'   , param%ice_restart_file   , 'ice_ocmip2_cfc.res.nc')
@@ -392,35 +390,35 @@ contains
     !diag_tracers: none
     !
     !cfc12
-    call g_tracer_add(tracer_list,package_name,&
-         name       = 'cfc12',               &
-         longname   = 'Moles Per Unit Mass of CFC-12 in sea water',          &
-         units      = 'mol/kg',                        &
-         prog       = .true.,                          &
-         requires_src_info  = .false.,                 &
-         flux_gas       = .true.,                      &
-         flux_gas_type  = 'air_sea_gas_flux_generic',  &
-         flux_gas_param = (/ 9.36e-07, 9.7561e-06 /),  &
-         flux_gas_restart_file  = 'ocmip2_cfc_airsea_flux.res.nc', &
+
+    call g_tracer_add(tracer_list,package_name,                      &
+         name       = 'cfc12',                                       &
+         longname   = 'Moles Per Unit Mass of CFC-12 in sea water',  &
+         units      = 'mol/kg',                                      &
+         prog       = .true.,                                        &
+         requires_src_info  = .false.,                               &
+         flux_gas       = .true.,                                    &
+         flux_gas_type  = 'air_sea_gas_flux_generic',                &
+         flux_gas_param = (/ as_coeff_cfc, 9.7561e-06 /),            &
+         flux_gas_restart_file  = 'ocmip2_cfc_airsea_flux.res.nc',   &
          standard_name = "mole_concentration_of_cfc12_in_sea_water", &
-         diag_field_units = 'mol m-3', &
+         diag_field_units = 'mol m-3',                               &
          diag_field_scaling_factor = 1035.0)   ! rho = 1035.0 kg/m3, converts mol/kg to mol/m3
 
     !cfc11
-    call g_tracer_add(tracer_list,package_name,        &
-         name       = 'cfc11',                        &
-         longname   = 'Moles Per Unit Mass of CFC-11 in sea water',          &
-         units      = 'mol/kg',                        &
-         prog       = .true.,                          &
-         requires_src_info  = .false.,                 &
-         flux_gas       = .true.,                      &
-         flux_gas_type  = 'air_sea_gas_flux_generic',  &
-         flux_gas_param = (/ 9.36e-07, 9.7561e-06 /),  &
-         flux_gas_restart_file  = 'ocmip2_cfc_airsea_flux.res.nc', &
+    call g_tracer_add(tracer_list,package_name,                      &
+         name       = 'cfc11',                                       &
+         longname   = 'Moles Per Unit Mass of CFC-11 in sea water',  &
+         units      = 'mol/kg',                                      &
+         prog       = .true.,                                        &
+         requires_src_info  = .false.,                               &
+         flux_gas       = .true.,                                    &
+         flux_gas_type  = 'air_sea_gas_flux_generic',                &
+         flux_gas_param = (/ as_coeff_cfc, 9.7561e-06 /),            &
+         flux_gas_restart_file  = 'ocmip2_cfc_airsea_flux.res.nc',   &
          standard_name = "mole_concentration_of_cfc11_in_sea_water", &
-         diag_field_units = 'mol m-3', &
+         diag_field_units = 'mol m-3',                               &
          diag_field_scaling_factor = 1035.0)   ! rho = 1035.0 kg/m3, converts mol/kg to mol/m3
-
 
   end subroutine user_add_tracers
 

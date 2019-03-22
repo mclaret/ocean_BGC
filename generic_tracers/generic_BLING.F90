@@ -212,10 +212,13 @@ module generic_BLING
   public generic_BLING_update_from_bottom
   public generic_BLING_set_boundary_values
   public generic_BLING_end
+  public as_coeff_bling
 
-  !The following logical for using this module is overwritten 
+  !The following logical for using this module 
+  ! and for as_coeff value are overwritten by 
   ! generic_tracer_nml namelist
   logical, save :: do_generic_BLING = .false.
+  real   , save :: as_coeff_bling = 9.36e-07 ! [m/s] air-sea gas transfer coefficient. Default: OCMIP2 value of 0.337 cm/hr
 
   real, parameter :: sperd = 24.0 * 3600.0
   real, parameter :: spery = 365.25 * sperd
@@ -232,10 +235,9 @@ module generic_BLING
   logical :: do_po4_pre         = .true.
   logical :: bury_caco3         = .false. ! Requires do_carbon = .true.
   logical :: bury_pop           = .false. ! Requires do_carbon = .true.
-  real    :: as_coeff           = 9.36e-07 
 
 namelist /generic_bling_nml/ co2_calc, do_13c, do_14c, do_carbon, do_carbon_pre, &
-  do_po4_pre, bury_caco3, bury_pop, as_coeff
+  do_po4_pre, bury_caco3, bury_pop
 
   !
   !The following two types contain all the parameters and arrays used in this module.
@@ -2465,7 +2467,6 @@ write (stdlogunit, generic_bling_nml)
     !Prognostic Tracers
     !===========================================================
     !
-
     !       Dissolved Fe 
     !
     call g_tracer_add(tracer_list,package_name,     &
@@ -2506,8 +2507,7 @@ write (stdlogunit, generic_bling_nml)
          flux_gas_name  = 'o2_flux',                                &
          flux_gas_type  = 'air_sea_gas_flux_generic',               &
          flux_gas_molwt = WTMO2,                                    &
-         !flux_gas_param = (/ 6.972e-07, 9.7561e-06 /),               &
-         flux_gas_param = (/ as_coeff, 9.7561e-06 /),               &
+         flux_gas_param = (/ as_coeff_bling, 9.7561e-06 /),         &
          flux_gas_restart_file  = 'ocean_bling_airsea_flux.res.nc' )
 
     !
@@ -2570,135 +2570,134 @@ write (stdlogunit, generic_bling_nml)
       ! If CaCO3 is being buried, alkalinity is restored
       ! by riverine input (flux_runoff = true).
       !
-      call g_tracer_add(tracer_list,package_name,    &
-           name       = 'alk',                       &
-           longname   = 'Alkalinity',                &
-           units      = 'mol/kg',                    &
-           prog       = .true.,                      &
-           flux_runoff    = .true.,                  &
-           flux_param     = (/ 1.0e-03 /),           &
-           flux_bottom    = .true.           )
+      call g_tracer_add(tracer_list,package_name, &
+           name        = 'alk',                   &
+           longname    = 'Alkalinity',            &
+           units       = 'mol/kg',                &
+           prog        = .true.,                  &
+           flux_runoff = .true.,                  &
+           flux_param  = (/ 1.0e-03 /),           &
+           flux_bottom = .true.                    )
       !
       !       DIC (Dissolved inorganic carbon)
       !
-      call g_tracer_add(tracer_list,package_name,    &
-         name       = 'dic',                         &
-         longname   = 'Dissolved Inorganic Carbon',  &
-         units      = 'mol/kg',                      &
-         prog       = .true.,                        &
-         flux_gas       = .true.,                    &
-         flux_gas_name  = 'co2_flux',                &
-         flux_gas_type  = 'air_sea_gas_flux_generic',&
-         flux_gas_molwt = WTMCO2,                    &
-         !flux_gas_param = (/ 6.972e-07, 9.7561e-06 /),&
-         flux_gas_param = (/ as_coeff, 9.7561e-06 /),&
+      call g_tracer_add(tracer_list,package_name,                   &
+         name           = 'dic',                                    &
+         longname       = 'Dissolved Inorganic Carbon',             &
+         units          = 'mol/kg',                                 &
+         prog           = .true.,                                   &
+         flux_gas       = .true.,                                   &
+         flux_gas_name  = 'co2_flux',                               &
+         flux_gas_type  = 'air_sea_gas_flux_generic',               &
+         flux_gas_molwt = WTMCO2,                                   &
+         flux_gas_param = (/ as_coeff_bling, 9.7561e-06 /),         &
          flux_gas_restart_file  = 'ocean_bling_airsea_flux.res.nc', &
-         flux_runoff    = .true.,                    &
-         flux_param     = (/12.011e-03  /),          &
-         flux_bottom    = .true.,                    &
-         init_value     = 0.001)
+         flux_runoff    = .true.,                                   &
+         flux_param     = (/12.011e-03  /),                         &
+         flux_bottom    = .true.,                                   &
+         init_value     = 0.001                                      )
       !
       !    Cased (CaCO3 concentration in active sediment layer)   
       !
-      call g_tracer_add(tracer_list,package_name,    &
-           name       = 'cased',                     &
+      call g_tracer_add(tracer_list,package_name,       &
+           name       = 'cased',                        &
            longname   = 'Sediment CaCO3 concentration', &
-           units      = 'mol m-3',                   &
-           prog       = .false.          )
+           units      = 'mol m-3',                      &
+           prog       = .false.                          )
       else
       !
       !       ALK (Total carbonate alkalinity)
       !
-      call g_tracer_add(tracer_list,package_name,    &
-           name       = 'alk',                       &
-           longname   = 'Alkalinity',                &
-           units      = 'mol/kg',                    &
-           prog       = .true.,                      &
-           flux_runoff    = .false.,                 &
-           flux_param     = (/ 1.0e-03 /),           &
-           flux_bottom    = .true.           )
+      call g_tracer_add(tracer_list,package_name, &
+           name        = 'alk',                   &
+           longname    = 'Alkalinity',            &
+           units       = 'mol/kg',                &
+           prog        = .true.,                  &
+           flux_runoff = .false.,                 &
+           flux_param  = (/ 1.0e-03 /),           &
+           flux_bottom = .true.                    )
       !
       !       DIC (Dissolved inorganic carbon)
       !
-      call g_tracer_add(tracer_list,package_name,    &
-         name       = 'dic',                         &
-         longname   = 'Dissolved Inorganic Carbon',  &
-         units      = 'mol/kg',                      &
-         prog       = .true.,                        &
-         flux_gas       = .true.,                    &
-         flux_gas_name  = 'co2_flux',                &
-         flux_gas_type  = 'air_sea_gas_flux_generic',&
-         flux_gas_molwt = WTMCO2,                    &
-         flux_gas_param = (/ as_coeff, 9.7561e-06 /),&
+      call g_tracer_add(tracer_list,package_name,           &
+         name           = 'dic',                            &
+         longname       = 'Dissolved Inorganic Carbon',     &
+         units          = 'mol/kg',                         &
+         prog           = .true.,                           &
+         flux_gas       = .true.,                           &
+         flux_gas_name  = 'co2_flux',                       &
+         flux_gas_type  = 'air_sea_gas_flux_generic',       &
+         flux_gas_molwt = WTMCO2,                           &
+         flux_gas_param = (/ as_coeff_bling, 9.7561e-06 /), &
          flux_gas_restart_file  = 'ocean_bling_airsea_flux.res.nc', &
-         flux_runoff    = .false.,                   &
-         flux_param     = (/12.011e-03  /),          &
-         flux_bottom    = .true.,                    &
-         init_value     = 0.001)
+         flux_runoff    = .false.,                          &
+         flux_param     = (/12.011e-03  /),                 &
+         flux_bottom    = .true.,                           &
+         init_value     = 0.001                              )
       endif                                                    !BURY CACO3>>
     !     
     !Diagnostic Tracers:
     !
     !       CO3_ion (Carbonate ion)
     !
-    call g_tracer_add(tracer_list,package_name,      &
-         name       = 'co3_ion',                     &
-         longname   = 'Carbonate ion',               &
-         units      = 'mol/kg',                      &
-         prog       = .false. )
+    call g_tracer_add(tracer_list,package_name, &
+         name       = 'co3_ion',                &
+         longname   = 'Carbonate ion',          &
+         units      = 'mol/kg',                 &
+         prog       = .false.                    )
     !
     !       htotal (H+ ion concentration)
     !
-    call g_tracer_add(tracer_list,package_name,      &
-         name       = 'htotal',                      &
-         longname   = 'H+ ion concentration',        &
-         units      = 'mol/kg',                      &
-         prog       = .false.,                       &
-         init_value = bling%htotal_in)
+    call g_tracer_add(tracer_list,package_name,  &
+         name       = 'htotal',                  &
+         longname   = 'H+ ion concentration',    &
+         units      = 'mol/kg',                  &
+         prog       = .false.,                   &
+         init_value = bling%htotal_in             )
 
       if (do_carbon_pre) then                                  !<<DIC_PRE  
       !       ALK_pre
       !
-      call g_tracer_add(tracer_list,package_name,    &
-           name       = 'alk_pre',                   &
-           longname   = 'Preformed ALK',             &
-           units      = 'mol/kg',                    &
-           prog       = .true.)
+      call g_tracer_add(tracer_list,package_name, &
+           name       = 'alk_pre',                &
+           longname   = 'Preformed ALK',          &
+           units      = 'mol/kg',                 &
+           prog       = .true.                     )
       !          
       !       DIC_pre
       !
-      call g_tracer_add(tracer_list,package_name,    &
-           name       = 'dic_pre',                   &
-           longname   = 'Preformed DIC',             &
-           units      = 'mol/kg',                    &
-           prog       = .true.)
+      call g_tracer_add(tracer_list,package_name, &
+           name       = 'dic_pre',                &
+           longname   = 'Preformed DIC',          &
+           units      = 'mol/kg',                 &
+           prog       = .true.                     )
       !   
       !       DIC_sat (Saturation Dissolved inorganic carbon)
       !
-      call g_tracer_add(tracer_list,package_name,    &
-           name       = 'dic_sat',                   &
-           longname   = 'Saturation Dissolved Inorganic Carbon', &
-           units      = 'mol/kg',                    &
-           prog       = .true.,                      &
-           flux_gas       = .true.,                  &
-           flux_gas_name  = 'co2_sat_flux',          &
-           flux_gas_type  = 'air_sea_gas_flux',      &
-           flux_gas_molwt = WTMCO2,                  &
-           flux_gas_param = (/ as_coeff, 9.7561e-06 /),&
+      call g_tracer_add(tracer_list,package_name,                     &
+           name           = 'dic_sat',                                &
+           longname       = 'Saturation Dissolved Inorganic Carbon',  &
+           units          = 'mol/kg',                                 &
+           prog           = .true.,                                   &
+           flux_gas       = .true.,                                   &
+           flux_gas_name  = 'co2_sat_flux',                           &
+           flux_gas_type  = 'air_sea_gas_flux',                       &
+           flux_gas_molwt = WTMCO2,                                   &
+           flux_gas_param = (/ as_coeff_bling, 9.7561e-06 /),         &
            flux_gas_restart_file  = 'ocean_bling_airsea_flux.res.nc', &
-           flux_param     = (/12.011e-03  /),        &
-           init_value     = 0.001)
+           flux_param     = (/12.011e-03  /),                         &
+           init_value     = 0.001                                      )
       !
       !Diagnostic tracers
       !
       !       htotal_sat (H+ ion concentration for DIC_sat)
       !
-      call g_tracer_add(tracer_list,package_name,       &
-           name       = 'htotal_sat',                   &
+      call g_tracer_add(tracer_list,package_name,           &
+           name       = 'htotal_sat',                       &
            longname   = 'H+ ion concentration for DIC_sat', &
-           units      = 'mol/kg',                       &
-           prog       = .false.,                        &
-           init_value = bling%htotal_in)
+           units      = 'mol/kg',                           &
+           prog       = .false.,                            &
+           init_value = bling%htotal_in                      )
       endif                                                       !DIC_PRE>>
  
       if (do_13c) then                                          !<<CARBON-13
@@ -2712,11 +2711,11 @@ write (stdlogunit, generic_bling_nml)
              flux_gas_type  = 'air_sea_gas_flux_generic',              &
              flux_gas_name  = 'c13o2_flux',                            &
              flux_gas_molwt = 45.00995,                                &
-             flux_gas_param = (/ as_coeff, 9.7561e-06 /),             &  ! Wanninkhof 2014: 0.251 cm/h
+             flux_gas_param = (/ as_coeff_bling, 9.7561e-06 /),        &  
              flux_gas_restart_file  = 'ocean_bling_airsea_flux.res.nc',&
              flux_param     = (/ 13.e-03 /),                           &
              flux_runoff    = .true.,                                  &
-             flux_bottom    = .true.)
+             flux_bottom    = .true.                                     )
  
          call g_tracer_add(tracer_list, package_name, &
               name       = 'do13c' ,                  &
@@ -2729,7 +2728,7 @@ write (stdlogunit, generic_bling_nml)
                name       = 'ca13csed',                        &
                longname   = 'Sediment Ca13CO3 concentration',  &
                units      = 'mol m-3',                         &
-               prog       = .false. )
+               prog       = .false.                             )
          endif                                               !BURY CA13CO3>>
 
       endif                                                     !CARBON-13>> 
@@ -2737,20 +2736,20 @@ write (stdlogunit, generic_bling_nml)
       if (do_14c) then                                        !<<RADIOCARBON
       !       D14IC (Dissolved inorganic radiocarbon)
       !
-      call g_tracer_add(tracer_list,package_name,       &
-         name       = 'di14c',                          &
-         longname   = 'Dissolved Inorganic Radiocarbon',&
-         units      = 'mol/kg',                         &
-         prog       = .true.,                           &
-         flux_gas       = .true.,                       &
-         flux_gas_name  = 'c14o2_flux',                 &
-         flux_gas_type  = 'air_sea_gas_flux',           &
-         flux_gas_molwt = WTMCO2,                       &
-         flux_gas_param = (/ as_coeff, 9.7561e-06 /),   &
+      call g_tracer_add(tracer_list,package_name,           &
+         name       = 'di14c',                              &
+         longname   = 'Dissolved Inorganic Radiocarbon',    &
+         units      = 'mol/kg',                             &
+         prog       = .true.,                               &
+         flux_gas       = .true.,                           &
+         flux_gas_name  = 'c14o2_flux',                     &
+         flux_gas_type  = 'air_sea_gas_flux',               &
+         flux_gas_molwt = WTMCO2,                           &
+         flux_gas_param = (/ as_coeff_bling, 9.7561e-06 /), &
          flux_gas_restart_file  = 'ocean_bling_airsea_flux.res.nc', &
-         flux_param     = (/14.e-03  /),                &
-         flux_bottom    = .true.,                       &
-         init_value     = 0.001)
+         flux_param     = (/14.e-03  /),                    &
+         flux_bottom    = .true.,                           &
+         init_value     = 0.001                              )
       !
       !       DO14C (Dissolved organic radiocarbon)
       !
@@ -2758,7 +2757,7 @@ write (stdlogunit, generic_bling_nml)
          name       = 'do14c',                          &
          longname   = 'DO14C',                          &
          units      = 'mol/kg',                         &
-         prog       = .true.)
+         prog       = .true.                             )
       endif                                                   !RADIOCARBON>>
 
     endif                                                    !CARBON CYCLE>>

@@ -218,10 +218,13 @@ module generic_abiotic
   public generic_abiotic_update_from_source
   public generic_abiotic_set_boundary_values
   public generic_abiotic_end
+  public as_coeff_abiotic
 
-  !The following logical for using this module is overwritten 
+  !The following logical for using this module
+  ! and the as_coeff are overwritten 
   ! by generic_tracer_nml namelist
   logical, save :: do_generic_abiotic = .false.
+  real   , save :: as_coeff_abiotic   = 9.36e-07 ! [m/s] air-sea gas transfer coefficient. Default: OCMIP2 value of 0.337 cm/hr
 
   real, parameter :: sperd = 24.0 * 3600.0
   real, parameter :: spery = 365.25 * sperd
@@ -317,7 +320,7 @@ namelist /generic_abiotic_nml/ co2_calc
 
   type(CO2_dope_vector)        :: CO2_dope_vec
   type(generic_abiotic_params) :: abiotic
-
+ 
 contains
 
   subroutine generic_abiotic_register(tracer_list)
@@ -646,7 +649,6 @@ contains
     !prog_tracers: abiotic
     !diag_tracers: none
     !
-
     call g_tracer_add(tracer_list,package_name,                        &
          name       = 'dissicabio',                                    &
          longname   = 'Abiotic Dissolved Inorganic Carbon Concentration',&
@@ -656,7 +658,7 @@ contains
          flux_gas_name  = 'abco2_flux',                                &
          flux_gas_type  = 'air_sea_gas_flux_generic',                  &
          flux_gas_molwt = WTMCO2,                                      &
-         flux_gas_param = (/ 9.36e-07, 9.7561e-06 /),                  &
+         flux_gas_param = (/ as_coeff_abiotic, 9.7561e-06 /),          &
          flux_gas_restart_file  = 'ocmip_abiotic_airsea_flux.res.nc',  &
          flux_runoff= .true.,                                          &
          flux_param = (/12.011e-03  /),                                &
@@ -675,7 +677,7 @@ contains
          flux_gas_name  = 'ab14co2_flux',                              &
          flux_gas_type  = 'air_sea_gas_flux_generic',                  &
          flux_gas_molwt = WTMCO2,                                      &
-         flux_gas_param = (/ 9.36e-07, 9.7561e-06 /),                  &
+         flux_gas_param = (/ as_coeff_abiotic, 9.7561e-06 /),                  &
          flux_gas_restart_file  = 'ocmip_abiotic_airsea_flux.res.nc',  &
          flux_runoff= .true.,                                          &
          flux_param = (/12.011e-03  /),                                &
