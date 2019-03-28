@@ -441,9 +441,16 @@ namelist /generic_bling_nml/ co2_calc, do_13c, do_14c, do_carbon, do_carbon_pre,
           fpop_100,&
           fpofe_100,&
           fcaco3_100,&
-          wc_vert_int_c,&
-          wc_vert_int_dic,&
-          wc_vert_int_doc
+          wc_vert_int_fed  ,&
+          wc_vert_int_o2   ,&
+          wc_vert_int_jp   ,&
+          wc_vert_int_po4  ,&
+          wc_vert_int_dop  ,&
+          wc_vert_int_c    ,&
+          wc_vert_int_dic  ,&
+          wc_vert_int_doc  ,&
+          wc_vert_int_di13c,&
+          wc_vert_int_do13c
 
 !==============================================================================================================
 
@@ -764,8 +771,6 @@ namelist /generic_bling_nml/ co2_calc, do_13c, do_14c, do_carbon, do_carbon_pre,
           id_epp100         = -1, &
           id_epfe100        = -1, &
           id_epcalc100      = -1, &
-          id_intdic         = -1, &
-          id_intdoc         = -1, &
           id_spco2          = -1, &
           id_dpco2          = -1, &
           id_dpo2           = -1, &
@@ -801,10 +806,16 @@ namelist /generic_bling_nml/ co2_calc, do_13c, do_14c, do_carbon, do_carbon_pre,
           id_fpop_100       = -1, &
           id_fpofe_100      = -1, &
           id_fcaco3_100     = -1, &
+          id_wc_vert_int_fed= -1, &
+          id_wc_vert_int_o2 = -1, &
           id_wc_vert_int_c  = -1, &
           id_wc_vert_int_dic= -1, &
-          id_wc_vert_int_doc= -1
-
+          id_wc_vert_int_doc= -1, &
+          id_wc_vert_int_jp = -1, &
+          id_wc_vert_int_po4= -1, &
+          id_wc_vert_int_dop= -1, &
+          id_wc_vert_int_di13c= -1, &
+          id_wc_vert_int_do13c= -1
 
   end type generic_BLING_type
 
@@ -1437,6 +1448,46 @@ write (stdlogunit, generic_bling_nml)
     endif                                                    !CARBON CYCLE>>
 
 !==============================================================================================================
+! MC 2019/03/20 Water column vertical integral checks
+
+    vardesc_temp= vardesc&
+    ("wc_vert_int_o2","Water column integral of O2",'h','1','s','mol m-2','f')
+    bling%id_wc_vert_int_o2 = register_diag_field(package_name, vardesc_temp%name, axes(1:2),&
+         init_time, vardesc_temp%longname,vardesc_temp%units, missing_value = missing_value1)
+
+    vardesc_temp= vardesc&
+    ("wc_vert_int_fed","Water column integral of iron",'h','1','s','mol m-2','f')
+    bling%id_wc_vert_int_fed = register_diag_field(package_name, vardesc_temp%name, axes(1:2),&
+         init_time, vardesc_temp%longname,vardesc_temp%units, missing_value = missing_value1)
+
+    vardesc_temp= vardesc&
+    ("wc_vert_int_jp","Water column integral of jpo4+jdop",'h','1','s','mol m-2','f')
+    bling%id_wc_vert_int_jp = register_diag_field(package_name, vardesc_temp%name, axes(1:2),&
+         init_time, vardesc_temp%longname,vardesc_temp%units, missing_value = missing_value1)
+
+    vardesc_temp= vardesc&
+    ("wc_vert_int_po4","Water column integral of PO4",'h','1','s','mol m-2','f')
+    bling%id_wc_vert_int_po4 = register_diag_field(package_name, vardesc_temp%name, axes(1:2),&
+         init_time, vardesc_temp%longname,vardesc_temp%units, missing_value = missing_value1)
+
+    vardesc_temp= vardesc&
+    ("wc_vert_int_dop","Water column integral of DOP",'h','1','s','mol m-2','f')
+    bling%id_wc_vert_int_dop = register_diag_field(package_name, vardesc_temp%name, axes(1:2),&
+         init_time, vardesc_temp%longname,vardesc_temp%units, missing_value = missing_value1)
+
+    if (do_carbon .and. do_13c) then
+        vardesc_temp= vardesc&
+        ("wc_vert_int_di13c","Water column integral of DI13c",'h','1','s','mol m-2','f')
+        bling%id_wc_vert_int_di13c = register_diag_field(package_name, vardesc_temp%name, axes(1:2),&
+           init_time, vardesc_temp%longname,vardesc_temp%units, missing_value = missing_value1)
+
+        vardesc_temp= vardesc&
+        ("wc_vert_int_do13c","Water column integral of DO13c",'h','1','s','mol m-2','f')
+        bling%id_wc_vert_int_do13c = register_diag_field(package_name, vardesc_temp%name, axes(1:2),&
+           init_time, vardesc_temp%longname,vardesc_temp%units, missing_value = missing_value1)
+    endif
+
+!==============================================================================================================
 ! JGJ 2016/08/08 CMIP6 OcnBgchem Oyr/Omon/day: Marine Biogeochemical Fields
 
     vardesc_temp = vardesc("dissic_raw","Total Dissolved Inorganic Carbon",'h','L','s','mol m-3','f')
@@ -1856,14 +1907,14 @@ write (stdlogunit, generic_bling_nml)
 ! 2017/08/04 was supposed to change spreadsheet to match dissic, dissoc (check OCMIP paper for names used there)
 ! 2017/08/04 - updated to intdic, intdoc instead of intdissic, intdissoc
     vardesc_temp = vardesc("intdic_raw","Dissolved Inorganic Carbon Content",'h','1','s','kg m-2','f')
-    bling%id_intdic = register_diag_field(package_name, vardesc_temp%name, axes(1:2), &
+    bling%id_wc_vert_int_dic = register_diag_field(package_name, vardesc_temp%name, axes(1:2), &
          init_time, vardesc_temp%longname,vardesc_temp%units, missing_value = missing_value1, &
          cmor_field_name="intdic", cmor_units="kg m-2",                          &
          cmor_standard_name="ocean_mass_content_of_dissolved_inorganic_carbon", &
          cmor_long_name="Dissolved Inorganic Carbon Content")
 
     vardesc_temp = vardesc("intdoc_raw","Dissolved Organic Carbon Content",'h','1','s','kg m-2','f')
-    bling%id_intdoc = register_diag_field(package_name, vardesc_temp%name, axes(1:2), &
+    bling%id_wc_vert_int_doc = register_diag_field(package_name, vardesc_temp%name, axes(1:2), &
          init_time, vardesc_temp%longname,vardesc_temp%units, missing_value = missing_value1, &
          cmor_field_name="intdoc", cmor_units="kg m-2",                          &
          cmor_standard_name="ocean_mass_content_of_dissolved_organic_carbon", &
@@ -2702,7 +2753,9 @@ write (stdlogunit, generic_bling_nml)
  
       if (do_13c) then                                          !<<CARBON-13
       !
-        call g_tracer_add(tracer_list, package_name,                   &
+        if (bury_caco3) then
+
+          call g_tracer_add(tracer_list, package_name,                 &
              name           = 'di13c',                                 &
              longname       = 'Dissolved Inorganic 13C)',              &
              units          = 'mol/kg',                                &
@@ -2717,19 +2770,35 @@ write (stdlogunit, generic_bling_nml)
              flux_runoff    = .true.,                                  &
              flux_bottom    = .true.                                     )
  
+          call g_tracer_add(tracer_list, package_name,         &
+               name       = 'ca13csed',                        &
+               longname   = 'Sediment Ca13CO3 concentration',  &
+               units      = 'mol m-3',                         &
+               prog       = .false.                             )
+        else
+
+          call g_tracer_add(tracer_list, package_name,                 &
+             name           = 'di13c',                                 &
+             longname       = 'Dissolved Inorganic 13C)',              &
+             units          = 'mol/kg',                                &
+             prog           = .true.,                                  &
+             flux_gas       = .true.,                                  & 
+             flux_gas_type  = 'air_sea_gas_flux_generic',              &
+             flux_gas_name  = 'c13o2_flux',                            &
+             flux_gas_molwt = 45.00995,                                &
+             flux_gas_param = (/ as_coeff_bling, 9.7561e-06 /),        &  
+             flux_gas_restart_file  = 'ocean_bling_airsea_flux.res.nc',&
+             flux_param     = (/ 13.e-03 /),                           &
+             flux_runoff    = .false.,                                 &
+             flux_bottom    = .true.                                     )
+ 
+         endif                                               !BURY CA13CO3>>
+
          call g_tracer_add(tracer_list, package_name, &
               name       = 'do13c' ,                  &
               longname   = 'Dissolved organic 13C' ,  &
               units      = 'mol/kg',                  &
               prog       = .true.                      )                 
-
-         if (bury_caco3) then                                !<<BURYCACO3  
-           call g_tracer_add(tracer_list, package_name,        &
-               name       = 'ca13csed',                        &
-               longname   = 'Sediment Ca13CO3 concentration',  &
-               units      = 'mol m-3',                         &
-               prog       = .false.                             )
-         endif                                               !BURY CA13CO3>>
 
       endif                                                     !CARBON-13>> 
  
@@ -4332,6 +4401,25 @@ bling%wrk(i,j,k) = dzt(i,j,k)
        enddo !} k-loop
     enddo; enddo  !} i, j
 
+    do j = jsc, jec ; do i = isc, iec !{
+      bling%wc_vert_int_o2(i,j)   = 0.0
+      bling%wc_vert_int_fed(i,j)  = 0.0
+      bling%wc_vert_int_jp(i,j)   = 0.0
+      bling%wc_vert_int_po4(i,j)  = 0.0
+      bling%wc_vert_int_dop(i,j)  = 0.0
+    enddo; enddo !} i,j
+
+    do j = jsc, jec ; do i = isc, iec ; do k = 1, nk  !{
+
+      bling%wc_vert_int_fed(i,j) = bling%wc_vert_int_fed(i,j) + ( bling%p_fed(i,j,k,tau)*rho_dzt(i,j,k) )
+      bling%wc_vert_int_o2(i,j)  = bling%wc_vert_int_o2(i,j)  + ( bling%p_o2(i,j,k,tau) *rho_dzt(i,j,k) )
+      bling%wc_vert_int_jp(i,j) =  bling%wc_vert_int_jp(i,j) &
+                                  + ( bling%jpo4(i,j,k) + bling%jdop(i,j,k) ) * rho_dzt(i,j,k)  
+      bling%wc_vert_int_po4(i,j) = bling%wc_vert_int_po4(i,j) + ( bling%p_po4(i,j,k,tau)*rho_dzt(i,j,k) )
+      bling%wc_vert_int_dop(i,j) = bling%wc_vert_int_dop(i,j) + ( bling%p_dop(i,j,k,tau)*rho_dzt(i,j,k) )
+
+    enddo; enddo; enddo  !} i,j,k
+
     if (do_carbon) then                                      !<<CARBON CYCLE
        do j = jsc, jec ; do i = isc, iec  !{
           tmp_100 = dzt(i,j,1)
@@ -4436,21 +4524,31 @@ bling%wrk(i,j,k) = dzt(i,j,k)
     !---------------------------------------------------------------------
     !
     do j = jsc, jec ; do i = isc, iec !{
-       bling%wc_vert_int_c(i,j) = 0.0
-       bling%wc_vert_int_dic(i,j) = 0.0
-       bling%wc_vert_int_doc(i,j) = 0.0
+       bling%wc_vert_int_c(i,j)    = 0.0
+       bling%wc_vert_int_dic(i,j)  = 0.0
+       bling%wc_vert_int_doc(i,j)  = 0.0
+
+       if (do_13c) then
+         bling%wc_vert_int_di13c(i,j)  = 0.0
+         bling%wc_vert_int_do13c(i,j)  = 0.0
+      endif
     enddo; enddo !} i,j
+
     do j = jsc, jec ; do i = isc, iec ; do k = 1, nk  !{
-       bling%wc_vert_int_dic(i,j) = bling%wc_vert_int_dic(i,j) + bling%p_dic(i,j,k,tau) *            &
+       bling%wc_vert_int_dic(i,j)  = bling%wc_vert_int_dic(i,j)  + bling%p_dic(i,j,k,tau) *            &
           rho_dzt(i,j,k) * grid_tmask(i,j,k)
-       bling%wc_vert_int_doc(i,j) = bling%wc_vert_int_doc(i,j) + (bling%doc_background +             &
+       bling%wc_vert_int_doc(i,j)  = bling%wc_vert_int_doc(i,j)  + (bling%doc_background +             &
           bling%p_dop(i,j,k,tau) * bling%c_2_p) * rho_dzt(i,j,k) * grid_tmask(i,j,k)
-       bling%wc_vert_int_c(i,j) = bling%wc_vert_int_dic(i,j) + bling%wc_vert_int_doc(i,j) +          &
-          bling%f_biomass_p(i,j,k) * bling%c_2_p * rho_dzt(i,j,k) * grid_tmask(i,j,k)
+       bling%wc_vert_int_c(i,j)    = bling%wc_vert_int_dic(i,j)  + bling%wc_vert_int_doc(i,j) +          &
+          bling%f_biomass_p(i,j,k) * bling%c_2_p * rho_dzt(i,j,k)* grid_tmask(i,j,k)
+
+       if (do_13c) then
+         bling%wc_vert_int_di13c(i,j) = bling%wc_vert_int_di13c(i,j) + ( bling%p_di13c(i,j,k,tau)*rho_dzt(i,j,k) )
+         bling%wc_vert_int_do13c(i,j) = bling%wc_vert_int_do13c(i,j) + ( bling%p_do13c(i,j,k,tau)*rho_dzt(i,j,k) )
+       endif
     enddo; enddo; enddo  !} i,j,k
 
     endif                                                    !CARBON CYCLE>>
-
     !
     !Set the diagnostics tracer fields.
     !
@@ -5259,21 +5357,57 @@ bling%wrk(i,j,k) = dzt(i,j,k)
         model_time, rmask = grid_tmask(:,:,1),                                   &
         is_in=isc, js_in=jsc, ie_in=iec, je_in=jec)
 
-! CAS: should be wc_vert_int_dic?, *12e-3 to go from moles C m-2 to kg C m-2
-    if (bling%id_intdic .gt. 0)                                                  &
-        used = g_send_data(bling%id_intdic,  bling%wc_vert_int_dic*12e-3,        &
-        model_time, rmask = grid_tmask(:,:,1),                                   &
-        is_in=isc, js_in=jsc, ie_in=iec, je_in=jec)
-
-! CAS: added wc_vert_int_doc, *12e-3 to go from moles C m-2 to kg C m-2
-    if (bling%id_intdoc .gt. 0)                                                  &          
-        used = g_send_data(bling%id_intdoc,  bling%wc_vert_int_doc*12e-3,        &
-        model_time, rmask = grid_tmask(:,:,1),                                   &
-        is_in=isc, js_in=jsc, ie_in=iec, je_in=jec)
-
     if (bling%id_spco2 .gt. 0)                                                   &
         used = g_send_data(bling%id_spco2,  bling%pco2_csurf * 0.1013,           &
         model_time, rmask = grid_tmask(:,:,1), &
+        is_in=isc, js_in=jsc, ie_in=iec, je_in=jec)
+
+! CAS: should be wc_vert_int_dic?, *12e-3 to go from moles C m-2 to kg C m-2
+    if (bling%id_wc_vert_int_dic .gt. 0)                                                  &
+        used = g_send_data(bling%id_wc_vert_int_dic,  bling%wc_vert_int_dic*12e-3, &
+        model_time, rmask = grid_tmask(:,:,1),                                     &
+        is_in=isc, js_in=jsc, ie_in=iec, je_in=jec)
+
+! CAS: added wc_vert_int_doc, *12e-3 to go from moles C m-2 to kg C m-2
+    if (bling%id_wc_vert_int_doc .gt. 0)                                           &          
+        used = g_send_data(bling%id_wc_vert_int_doc,  bling%wc_vert_int_doc*12e-3, &
+        model_time, rmask = grid_tmask(:,:,1),                                     &
+        is_in=isc, js_in=jsc, ie_in=iec, je_in=jec)
+
+    if (bling%id_wc_vert_int_di13c .gt. 0)                                         &
+        used = g_send_data(bling%id_wc_vert_int_di13c, bling%wc_vert_int_di13c,     &
+        model_time, rmask = grid_tmask(:,:,1),                                     &
+        is_in=isc, js_in=jsc, ie_in=iec, je_in=jec)
+
+    if (bling%id_wc_vert_int_do13c .gt. 0)                                         &          
+        used = g_send_data(bling%id_wc_vert_int_do13c, bling%wc_vert_int_do13c,    &
+        model_time, rmask = grid_tmask(:,:,1),                                     &
+        is_in=isc, js_in=jsc, ie_in=iec, je_in=jec)
+
+! CHECK: intpo4+intdop-b_po4+fpop_burial=0
+    if (bling%id_wc_vert_int_jp .gt. 0)                                         &          
+        used = g_send_data(bling%id_wc_vert_int_jp,  bling%wc_vert_int_jp,      &
+        model_time, rmask = grid_tmask(:,:,1),                                  &
+        is_in=isc, js_in=jsc, ie_in=iec, je_in=jec)
+
+    if (bling%id_wc_vert_int_po4 .gt. 0)                                         &          
+        used = g_send_data(bling%id_wc_vert_int_po4,  bling%wc_vert_int_po4,     &
+        model_time, rmask = grid_tmask(:,:,1),                                   &
+        is_in=isc, js_in=jsc, ie_in=iec, je_in=jec)
+
+    if (bling%id_wc_vert_int_dop .gt. 0)                                         &          
+        used = g_send_data(bling%id_wc_vert_int_dop,  bling%wc_vert_int_dop,     &
+        model_time, rmask = grid_tmask(:,:,1),                                   &
+        is_in=isc, js_in=jsc, ie_in=iec, je_in=jec)
+
+    if (bling%id_wc_vert_int_fed .gt. 0)                                         &          
+        used = g_send_data(bling%id_wc_vert_int_fed,  bling%wc_vert_int_fed,     &
+        model_time, rmask = grid_tmask(:,:,1),                                   &
+        is_in=isc, js_in=jsc, ie_in=iec, je_in=jec)
+
+    if (bling%id_wc_vert_int_o2 .gt. 0)                                          &          
+        used = g_send_data(bling%id_wc_vert_int_o2,  bling%wc_vert_int_o2,       &
+        model_time, rmask = grid_tmask(:,:,1),                                   &
         is_in=isc, js_in=jsc, ie_in=iec, je_in=jec)
 
 ! CHECK:
@@ -5803,11 +5937,11 @@ bling%wrk(i,j,k) = dzt(i,j,k)
     call g_tracer_set_values(tracer_list,'o2', 'csurf',o2_csurf, isd,jsd)
     call g_tracer_set_values(tracer_list,'o2', 'sc_no',o2_sc_no, isd,jsd)
 
-    deallocate(co2_alpha,co2_csurf,&
-      co2_sc_no,o2_alpha,          &
-      c14o2_alpha,c14o2_csurf,     &
-      c13o2_alpha,c13o2_csurf,     &
-      o2_csurf,o2_sc_no)
+    deallocate(o2_csurf,o2_sc_no,o2_alpha)
+
+    if (do_carbon) deallocate(co2_alpha,co2_csurf,co2_sc_no)
+    if (do_14c)    deallocate(c14o2_alpha,c14o2_csurf)
+    if (do_13c)    deallocate(c13o2_alpha,c13o2_csurf)
 
   end subroutine generic_BLING_set_boundary_values
 
@@ -5914,7 +6048,11 @@ bling%wrk(i,j,k) = dzt(i,j,k)
     allocate(bling%stf_gas_o2       (isd:ied, jsd:jed));      bling%stf_gas_o2=0.0
     allocate(bling%deltap_dic       (isd:ied, jsd:jed));      bling%deltap_dic=0.0
     allocate(bling%deltap_o2        (isd:ied, jsd:jed));      bling%deltap_o2=0.0
-
+    allocate(bling%wc_vert_int_jp   (isd:ied, jsd:jed));      bling%wc_vert_int_jp =0.0
+    allocate(bling%wc_vert_int_po4  (isd:ied, jsd:jed));      bling%wc_vert_int_po4=0.0
+    allocate(bling%wc_vert_int_dop  (isd:ied, jsd:jed));      bling%wc_vert_int_dop=0.0
+    allocate(bling%wc_vert_int_fed  (isd:ied, jsd:jed));      bling%wc_vert_int_fed=0.0
+    allocate(bling%wc_vert_int_o2   (isd:ied, jsd:jed));      bling%wc_vert_int_o2 =0.0
 
     if (do_po4_pre) then                                   !<<PO4_PRE
     allocate(bling%f_po4_pre(isd:ied, jsd:jed, 1:nk));        bling%f_po4_pre=0.0
@@ -6018,6 +6156,8 @@ bling%wrk(i,j,k) = dzt(i,j,k)
         allocate(bling%fca13co3_to_sed (isd:ied, jsd:jed));          bling%fca13co3_to_sed=0.0
         allocate(bling%c13o2_csurf     (isd:ied, jsd:jed));          bling%c13o2_csurf=0.0
         allocate(bling%c13o2_alpha     (isd:ied, jsd:jed));          bling%c13o2_alpha=0.0
+        allocate(bling%wc_vert_int_di13c(isd:ied, jsd:jed));         bling%wc_vert_int_di13c=0.0
+        allocate(bling%wc_vert_int_do13c(isd:ied, jsd:jed));         bling%wc_vert_int_do13c=0.0
 
         if (bury_caco3) then
           allocate(bling%f_ca13csed      (isd:ied, jsd:jed, 1:nk));    bling%f_ca13csed=0.0
@@ -6097,6 +6237,13 @@ bling%wrk(i,j,k) = dzt(i,j,k)
          bling%b_fed,&
          bling%b_o2,&
          bling%b_po4 )
+
+    deallocate( bling%wc_vert_int_jp ,&
+                bling%wc_vert_int_po4,&
+                bling%wc_vert_int_dop,&   
+                bling%wc_vert_int_fed,&
+                bling%wc_vert_int_o2   )  
+
     deallocate(&
           bling%runoff_flux_alk,&
           bling%runoff_flux_dic,&
@@ -6156,7 +6303,7 @@ bling%wrk(i,j,k) = dzt(i,j,k)
          bling%fcaco3_100,&  
          bling%wc_vert_int_c,&  
          bling%wc_vert_int_dic,&  
-         bling%wc_vert_int_doc )
+         bling%wc_vert_int_doc  )
   
       if (bury_caco3) then                                     !<<BURY CACO3  
       deallocate(&
@@ -6195,6 +6342,11 @@ bling%wrk(i,j,k) = dzt(i,j,k)
            bling%b_di14c )
       endif                                                    !RADIOCARBON>>
 
+      if (do_13c) then
+      deallocate(&
+          bling%wc_vert_int_di13c,&
+          bling%wc_vert_int_do13c  )
+      endif
     endif                                                      !CARBON CYCLE>>
 
   end subroutine user_deallocate_arrays
