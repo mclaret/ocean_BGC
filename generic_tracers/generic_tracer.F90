@@ -169,9 +169,9 @@ ierr = check_nml_error(io_status,'generic_tracer_nml')
 
     ! Use Wanninkhoff 2014 parameters for air-sea gas exchange if as_param='W14' in generic_tracer_nml
     if (as_param == 'W14') then
-      if (do_generic_abiotic) as_coeff_abiotic = 0
-      if (do_generic_CFC)     as_coeff_cfc     = 0
-      if (do_generic_SF6)     as_coeff_sf6     = 0
+      if (do_generic_abiotic) as_param_abiotic = as_param
+      if (do_generic_CFC)     as_param_cfc     = as_param
+      if (do_generic_SF6)     as_param_sf6     = as_param
       if (do_generic_BLING)   as_param_bling   = as_param
       if (do_generic_COBALT)  as_coeff_cobalt  = 0
     endif

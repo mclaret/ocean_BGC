@@ -218,13 +218,12 @@ module generic_abiotic
   public generic_abiotic_update_from_source
   public generic_abiotic_set_boundary_values
   public generic_abiotic_end
-  public as_coeff_abiotic
+  public as_param_abiotic
 
-  !The following logical for using this module
-  ! and the as_coeff are overwritten 
-  ! by generic_tracer_nml namelist
+  !The following variables for using this module
+  ! are overwritten by generic_tracer_nml namelist
   logical, save :: do_generic_abiotic = .false.
-  real   , save :: as_coeff_abiotic   = 9.36e-07 ! [m/s] air-sea gas transfer coefficient. Default: OCMIP2 value of 0.337 cm/hr
+  character(len=3), save :: as_param_abiotic   = 'W92'
 
   real, parameter :: sperd = 24.0 * 3600.0
   real, parameter :: spery = 365.25 * sperd
@@ -256,11 +255,12 @@ namelist /generic_abiotic_nml/ co2_calc
      real :: alkbar               !< Mean global alkalinity (eq/kg)
      real :: sio4_const           !< Silicate (SiO4) concentration (mol/kg)
      real :: po4_const            !< Phosphate (PO4) concentration (mol/kg)
-     real :: a1_co2               !< Wanninkhof Coeff.
-     real :: a2_co2               !< Wanninkhof Coeff.
-     real :: a3_co2               !< Wanninkhof Coeff.
-     real :: a4_co2               !< Wanninkhof Coeff.
-     real :: Rho_0                ! Reference density (kg/m^3)
+     real :: sA_co2               !< Schmidt number Coeff.
+     real :: sB_co2               !< Schmidt number Coeff.
+     real :: sC_co2               !< Schmidt number Coeff.
+     real :: sD_co2               !< Schmidt number Coeff.
+     real :: sE_co2               !< Schmidt number Coeff.
+     real :: Rho_0                !< Reference density (kg/m^3)
 
      ! Restart file names
      character(len=fm_string_len) :: ice_restart_file
@@ -581,13 +581,26 @@ contains
     !    g_tracer_add_param(name   , variable   ,  default_value)
     call g_tracer_add_param('sio4_const', abiotic%sio4_const, 7.5e-6) !mol/kg
     call g_tracer_add_param('po4_const',  abiotic%po4_const,  5.0e-7) !mol/kg
+
     !-----------------------------------------------------------------------
-    ! CO2 Solubility coefficients (Wanninkhof numbers)
+    ! CO2 Schmidt number coefficients
     !-----------------------------------------------------------------------
-    call g_tracer_add_param('a1_co2', abiotic%a1_co2, 2068.9)
-    call g_tracer_add_param('a2_co2', abiotic%a2_co2, -118.63)
-    call g_tracer_add_param('a3_co2', abiotic%a3_co2, 2.9311)
-    call g_tracer_add_param('a4_co2', abiotic%a4_co2, -0.027)
+    if (as_param_abiotic == 'W92') then
+        call g_tracer_add_param('sA_co2', abiotic%sA_co2, 2068.9)
+        call g_tracer_add_param('sB_co2', abiotic%sB_co2, -118.63)
+        call g_tracer_add_param('sC_co2', abiotic%sC_co2, 2.9311)
+        call g_tracer_add_param('sD_co2', abiotic%sD_co2, -0.027)
+        call g_tracer_add_param('sE_co2', abiotic%sE_co2, 0.0)      ! Not used in W92
+    else if (as_param_abiotic == 'W14') then
+        call g_tracer_add_param('sA_co2', abiotic%sA_co2,  2116.8)
+        call g_tracer_add_param('sB_co2', abiotic%sB_co2, -136.25)
+        call g_tracer_add_param('sC_co2', abiotic%sC_co2,  4.7353)
+        call g_tracer_add_param('sD_co2', abiotic%sD_co2, -0.092307)
+        call g_tracer_add_param('sE_co2', abiotic%sE_co2, -0.0007555)
+    else
+        call mpp_error(FATAL,'generic_abiotic: unable to set Schmidt number coefficients for CO2.')
+    endif
+
     !-----------------------------------------------------------------------
     ! H+ Concentration Parameters
     !-----------------------------------------------------------------------
@@ -624,9 +637,19 @@ contains
   subroutine user_add_tracers(tracer_list)
     type(g_tracer_type), pointer :: tracer_list
 
-
     character(len=fm_string_len), parameter :: sub_name = 'user_add_tracers'
+    real :: as_coeff_abiotic
 
+    if (as_param_abiotic == 'W92') then
+        ! Air-sea gas exchange coefficient presented in OCMIP2 protocol.
+        ! Value is 0.337 cm/hr in units of m/s.
+        as_coeff_abiotic = 9.36e-7
+    else if (as_param_abiotic == 'W14') then
+        ! Value is 0.251 cm/hr in units of m/s
+        as_coeff_abiotic = 6.972e-7
+    else
+        call mpp_error(FATAL,'Unable to set wind speed coefficient coefficients for as_param '//as_param_abiotic)
+    endif
 
     call g_tracer_start_param_list(package_name)!nnz: Does this append?
     call g_tracer_add_param('ice_restart_file'   , abiotic%ice_restart_file   , 'ice_ocmip_abiotic.res.nc')
@@ -1086,11 +1109,13 @@ contains
        !   NOTE: FOR NOW, D14C fixed at 0 permil!! Need to fix this later.
        !---------------------------------------------------------------------
 
-       abco2_sc_no(i,j) = abiotic%a1_co2 + ST * (abiotic%a2_co2 + ST * (abiotic%a3_co2 + ST * abiotic%a4_co2)) * &
-            grid_tmask(i,j,1)
+       if (as_param_abiotic == 'W92') then
+           abco2_sc_no(i,j)  =  abiotic%sA_co2 + ST * (abiotic%sB_co2 + ST * (abiotic%sC_co2 + ST * abiotic%sD_co2)) * &
+                                grid_tmask(i,j,1)
 
-       ab14co2_sc_no(i,j) = abiotic%a1_co2 + ST * (abiotic%a2_co2 + ST * (abiotic%a3_co2 + ST * abiotic%a4_co2)) * &
-            grid_tmask(i,j,1)
+           ab14co2_sc_no(i,j) = abiotic%sA_co2 + ST * (abiotic%sB_co2 + ST * (abiotic%sC_co2 + ST * abiotic%sD_co2)) * &
+                                grid_tmask(i,j,1)
+       endif
 
        ! sc_no_term = sqrt(660.0 / (sc_co2 + epsln))
        !
