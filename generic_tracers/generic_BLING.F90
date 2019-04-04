@@ -182,6 +182,7 @@ module generic_BLING
   use time_manager_mod,  only: time_type
   use fm_util_mod,       only: fm_util_start_namelist, fm_util_end_namelist  
   use constants_mod,     only: WTMCO2, WTMO2
+  use fms_mod,           only: stdout, stdlog,mpp_pe,mpp_root_pe
 
   use g_tracer_utils, only : g_diag_type,g_tracer_type
   use g_tracer_utils, only : g_tracer_start_param_list,g_tracer_end_param_list
@@ -212,13 +213,12 @@ module generic_BLING
   public generic_BLING_update_from_bottom
   public generic_BLING_set_boundary_values
   public generic_BLING_end
-  public as_coeff_bling
+  public as_param_bling
 
-  !The following logical for using this module 
-  ! and for as_coeff value are overwritten by 
-  ! generic_tracer_nml namelist
+  !The following variables for using this module 
+  ! are overwritten by generic_tracer_nml namelist
   logical, save :: do_generic_BLING = .false.
-  real   , save :: as_coeff_bling = 9.36e-07 ! [m/s] air-sea gas transfer coefficient. Default: OCMIP2 value of 0.337 cm/hr
+  character(len=3), save :: as_param_bling = 'W92'
 
   real, parameter :: sperd = 24.0 * 3600.0
   real, parameter :: spery = 365.25 * sperd
@@ -318,7 +318,10 @@ namelist /generic_bling_nml/ co2_calc, do_13c, do_14c, do_carbon, do_carbon_pre,
 
      real    :: htotal_scale_lo, htotal_scale_hi, htotal_in
      real    :: Rho_0, a_0, a_1, a_2, a_3, a_4, a_5, b_0, b_1, b_2, b_3, c_0
-     real    :: a1_co2, a2_co2, a3_co2, a4_co2, a5_co2, a1_o2, a2_o2, a3_o2, a4_o2, a5_o2
+     real    :: a1_co2_W92, a2_co2_W92, a3_co2_W92, a4_co2_W92, a5_co2_W92 
+     real    :: a1_co2_W14, a2_co2_W14, a3_co2_W14, a4_co2_W14, a5_co2_W14
+     real    :: a1_o2_W92 , a2_o2_W92 , a3_o2_W92,  a4_o2_W92,  a5_o2_W92
+     real    :: a1_o2_W14 , a2_o2_W14 , a3_o2_W14,  a4_o2_W14,  a5_o2_W14
 
 ! The prefixes "f_" refers to a "field" and "j" to a volumetric rate, and 
 ! "b_" to a bottom flux. The prefix "p_" refers to a "pointer".
@@ -2126,29 +2129,50 @@ write (stdlogunit, generic_bling_nml)
     call g_tracer_add_param('b_2', bling%b_2, -1.03410e-02 )
     call g_tracer_add_param('b_3', bling%b_3, -8.17083e-03)
     call g_tracer_add_param('c_0', bling%c_0, -4.88682e-07)
+    !
     !-----------------------------------------------------------------------
-    !     Schmidt number coefficients
+    !      Schmidt number coefficients
     !-----------------------------------------------------------------------
+    !  Compute the Schmidt number of CO2 in seawater using the 
+    !  formulation presented by Wanninkhof (1992, J. Geophys. Res., 97,
+    !  7373-7382).
+    !-----------------------------------------------------------------------
+    !New Wanninkhof numbers
+    call g_tracer_add_param('a1_co2_W92', bling%a1_co2_W92,  2068.9)
+    call g_tracer_add_param('a2_co2_W92', bling%a2_co2_W92, -118.63)
+    call g_tracer_add_param('a3_co2_W92', bling%a3_co2_W92,  2.9311)
+    call g_tracer_add_param('a4_co2_W92', bling%a4_co2_W92, -0.027)
+    !---------------------------------------------------------------------
+    !  Compute the Schmidt number of O2 in seawater using the 
+    !  formulation proposed by Keeling et al. (1998, Global Biogeochem.
+    !  Cycles, 12, 141-163).
+    !---------------------------------------------------------------------
+    !New Wanninkhof numbers
+    call g_tracer_add_param('a1_o2_W92', bling%a1_o2_W92, 1929.7)
+    call g_tracer_add_param('a2_o2_W92', bling%a2_o2_W92, -117.46)
+    call g_tracer_add_param('a3_o2_W92', bling%a3_o2_W92, 3.116)
+    call g_tracer_add_param('a4_o2_W92', bling%a4_o2_W92, -0.0306)
+    !---------------------------------------------------------------------
     !  Compute the Schmidt number of CO2 in seawater using the 
     !  formulation presented by Wanninkhof 
     !  (2014, Limnol. Oceanogr., 12, 351-362)
     !-----------------------------------------------------------------------
-    call g_tracer_add_param('a1_co2', bling%a1_co2,    2116.8)
-    call g_tracer_add_param('a2_co2', bling%a2_co2,   -136.25)
-    call g_tracer_add_param('a3_co2', bling%a3_co2,    4.7353)
-    call g_tracer_add_param('a4_co2', bling%a4_co2, -0.092307)
-    call g_tracer_add_param('a5_co2', bling%a5_co2, 0.0007555)
+    call g_tracer_add_param('a1_co2_W14', bling%a1_co2_W14,    2116.8)
+    call g_tracer_add_param('a2_co2_W14', bling%a2_co2_W14,   -136.25)
+    call g_tracer_add_param('a3_co2_W14', bling%a3_co2_W14,    4.7353)
+    call g_tracer_add_param('a4_co2_W14', bling%a4_co2_W14, -0.092307)
+    call g_tracer_add_param('a5_co2_W14', bling%a5_co2_W14, 0.0007555)
     !---------------------------------------------------------------------
     !  Compute the Schmidt number of O2 in seawater using the 
     !  formulation presented by Wanninkhof 
     !  (2014, Limnol. Oceanogr., 12, 351-362)
     !---------------------------------------------------------------------
-    call g_tracer_add_param('a1_o2', bling%a1_o2, 1920.4)
-    call g_tracer_add_param('a2_o2', bling%a2_o2, -135.6)
-    call g_tracer_add_param('a3_o2', bling%a3_o2, 5.2122)
-    call g_tracer_add_param('a4_o2', bling%a4_o2, -0.10939)
-    call g_tracer_add_param('a5_o2', bling%a5_o2, 0.00093777)
-
+    call g_tracer_add_param('a1_o2_W14', bling%a1_o2_W14, 1920.4)
+    call g_tracer_add_param('a2_o2_W14', bling%a2_o2_W14, -135.6)
+    call g_tracer_add_param('a3_o2_W14', bling%a3_o2_W14, 5.2122)
+    call g_tracer_add_param('a4_o2_W14', bling%a4_o2_W14, -0.10939)
+    call g_tracer_add_param('a5_o2_W14', bling%a5_o2_W14, 0.00093777)
+    !---------------------------------------------------------------------
     call g_tracer_add_param('htotal_scale_lo', bling%htotal_scale_lo, 0.01)
     call g_tracer_add_param('htotal_scale_hi', bling%htotal_scale_hi, 100.0)
 
@@ -2484,7 +2508,17 @@ write (stdlogunit, generic_bling_nml)
   subroutine user_add_tracers(tracer_list)
     type(g_tracer_type), pointer :: tracer_list
     character(len=fm_string_len), parameter :: sub_name = 'user_add_tracers'
+    real :: as_coeff_bling
 
+    if (as_param_bling == 'W92') then
+      ! Air-sea gas exchange coefficient presented in OCMIP2 protocol.
+      ! Value is 0.337 cm/hr in units of m/s.
+      as_coeff_bling=9.36e-7
+    else
+      ! Value is 0.251 cm/hr in units of m/s
+      as_coeff_bling=6.972e-7
+    endif
+    !-----------------------------------------------------------------------
     !Add here only the parameters that are required at the time of registeration 
     !(to make flux exchanging Ocean tracers known for all PE's) 
     !
@@ -2830,6 +2864,8 @@ write (stdlogunit, generic_bling_nml)
       endif                                                   !RADIOCARBON>>
 
     endif                                                    !CARBON CYCLE>>
+
+if (mpp_root_pe().eq.mpp_pe()) print*, 'CNT as_coeff BLING', as_coeff_bling
 
   end subroutine user_add_tracers
 
@@ -5790,8 +5826,16 @@ bling%wrk(i,j,k) = dzt(i,j,k)
          !  formulation presented by Wanninkhof (1992, J. Geophys. Res., 97,
          !  7373-7382).
          !---------------------------------------------------------------------
-         co2_sc_no(i,j) = bling%a1_co2 + ST*(bling%a2_co2 + ST*(bling%a3_co2 + ST*(bling%a4_co2 + ST*bling%a5_co2))) * &
+         if (as_param_bling == 'W92') then
+           co2_sc_no(i,j) = bling%a1_co2_W92 + ST*(bling%a2_co2_W92 + ST*(bling%a3_co2_W92 + ST*bling%a4_co2_W92)) * & 
               grid_tmask(i,j,1)
+if ( (i.eq.isc) .and. (j.eq.jsc) .and. (mpp_root_pe().eq.mpp_pe())) print*, 'CNT entered W92 for CO2 SNo'
+         else         
+           co2_sc_no(i,j) = bling%a1_co2_W14 + ST*(bling%a2_co2_W14 + ST*(bling%a3_co2_W14 + & 
+                                               ST*(bling%a4_co2_W14 + ST*bling%a5_co2_W14)  ) ) * &
+              grid_tmask(i,j,1)
+if ( (i.eq.isc) .and. (j.eq.jsc) .and. (mpp_root_pe().eq.mpp_pe())) print*, 'CNT entered W14 for CO2 SNo'
+         endif
   !       sc_no_term = sqrt(660.0 / (sc_co2 + epsln))
   !
   !       co2_alpha(i,j) = co2_alpha(i,j)* sc_no_term * bling%Rho_0 !nnz: MOM has rho(i,j,1,tau)
@@ -5825,8 +5869,14 @@ bling%wrk(i,j,k) = dzt(i,j,k)
          !---------------------------------------------------------------------
 
          sal = SSS(i,j) ; ST = SST(i,j)
-         co2_sc_no(i,j) = bling%a1_co2 + ST*(bling%a2_co2 + ST*(bling%a3_co2 + ST*(bling%a4_co2 + ST*bling%a5_co2))) * &
-            grid_tmask(i,j,1)
+         if (as_param_bling == 'W92') then
+           co2_sc_no(i,j) = bling%a1_co2_W92 + ST*(bling%a2_co2_W92 + ST*(bling%a3_co2_W92 + ST*bling%a4_co2_W92)) * & 
+              grid_tmask(i,j,1)
+         else         
+           co2_sc_no(i,j) = bling%a1_co2_W14 + ST*(bling%a2_co2_W14 + ST*(bling%a3_co2_W14 + & 
+                                               ST*(bling%a4_co2_W14 + ST*bling%a5_co2_W14)  ) ) * &
+              grid_tmask(i,j,1)
+         endif
        
          c14o2_alpha(i,j) = c14o2_alpha(i,j) * bling%Rho_0 
          c14o2_csurf(i,j) = c14o2_csurf(i,j) * bling%Rho_0 
@@ -5849,8 +5899,16 @@ bling%wrk(i,j,k) = dzt(i,j,k)
          !     13CO2 - schmidt number is calculated same as before, as is alpha.
          !---------------------------------------------------------------------
          sal = SSS(i,j) ; ST = SST(i,j)
-         co2_sc_no(i,j) = bling%a1_co2 + ST*(bling%a2_co2 + ST*(bling%a3_co2 + ST*(bling%a4_co2 + ST*bling%a5_co2))) * &
-            grid_tmask(i,j,1)
+         if (as_param_bling == 'W92') then
+           co2_sc_no(i,j) = bling%a1_co2_W92 + ST*(bling%a2_co2_W92 + ST*(bling%a3_co2_W92 + ST*bling%a4_co2_W92)) * & 
+              grid_tmask(i,j,1)
+if ( (i.eq.isc) .and. (j.eq.jsc) .and. (mpp_root_pe().eq.mpp_pe())) print*, 'CNT entered W92 for 13CO2 SNo'
+         else         
+           co2_sc_no(i,j) = bling%a1_co2_W14 + ST*(bling%a2_co2_W14 + ST*(bling%a3_co2_W14 + & 
+                                               ST*(bling%a4_co2_W14 + ST*bling%a5_co2_W14)  ) ) * &
+              grid_tmask(i,j,1)
+if ( (i.eq.isc) .and. (j.eq.jsc) .and. (mpp_root_pe().eq.mpp_pe())) print*, 'CNT entered W14 for 13CO2 SNo'
+         endif
        
          c13o2_alpha(i,j) = c13o2_alpha(i,j) * bling%Rho_0 
          c13o2_csurf(i,j) = c13o2_csurf(i,j) * bling%Rho_0 
@@ -5917,8 +5975,16 @@ bling%wrk(i,j,k) = dzt(i,j,k)
        ! In 'ocmip2_generic' atmos_ocean_fluxes.F90 coupler formulation,
        ! the schmidt number is carried in explicitly
        !
-       o2_sc_no(i,j)  = bling%a1_o2 + ST*(bling%a2_o2 + ST*(bling%a3_o2 + ST*(bling%a4_o2 + ST*bling%a5_o2))) * &
+       if (as_param_bling == 'W92') then
+         o2_sc_no(i,j)  = bling%a1_o2_W92 + ST * (bling%a2_o2_W92 + ST * (bling%a3_o2_W92 + ST * bling%a4_o2_W92 )) * &
             grid_tmask(i,j,1)
+if ( (i.eq.isc) .and. (j.eq.jsc) .and. (mpp_root_pe().eq.mpp_pe())) print*, 'CNT entered W92 for O2 SNo'
+       else
+         o2_sc_no(i,j) = bling%a1_o2_W14 + ST*(bling%a2_o2_W14 + ST*(bling%a3_o2_W14 + &
+                                            ST*(bling%a4_o2_W14 + ST*bling%a5_o2_W14)  ) ) * &
+            grid_tmask(i,j,1)
+if ( (i.eq.isc) .and. (j.eq.jsc) .and. (mpp_root_pe().eq.mpp_pe())) print*, 'CNT entered W14 for O2 SNo'
+       endif
        !
        !      renormalize the alpha value for atm o2
        !      data table override for o2_flux_pcair_atm is now set to 0.21
