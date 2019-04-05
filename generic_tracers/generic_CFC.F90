@@ -78,7 +78,7 @@ module generic_CFC
   !The following variables for using this module
   ! are overwritten by generic_tracer_nml namelist
   logical, save :: do_generic_CFC = .false.
-  character(len=3), save :: as_param_cfc   = 'W14'
+  character(len=10), save :: as_param_cfc   = 'gfdl_cmip6'
 
   real, parameter :: epsln=1.0e-30
   real, parameter :: missing_value1=-1.0e+10
@@ -279,7 +279,7 @@ contains
     !         for CFC11 and CFC12
     !-----------------------------------------------------------------------
     !    g_tracer_add_param(name   , variable   ,  default_value)
-    if (as_param_cfc == 'W92') then
+    if (trim(as_param_cfc) == 'W92') then
         call g_tracer_add_param('sA_11', param%sA_11,  3501.8)
         call g_tracer_add_param('sB_11', param%sB_11, -210.31)
         call g_tracer_add_param('sC_11', param%sC_11,  6.1851)
@@ -291,7 +291,7 @@ contains
         call g_tracer_add_param('sD_12', param%sD_12, -0.067430)
         call g_tracer_add_param('sE_12', param%sE_12,  0.0)      ! Not used for W92
         call mpp_error(NOTE,'Using Schmidt number coefficients for W92')
-    else if (as_param_cfc == 'W14') then 
+    else if ((trim(as_param_cfc) == 'W14') .or. (trim(as_param_cfc) == 'gfdl_cmip6')) then 
         call g_tracer_add_param('sA_11', param%sA_11,  3579.2)
         call g_tracer_add_param('sB_11', param%sB_11, -222.63)
         call g_tracer_add_param('sC_11', param%sC_11,  7.5749)
@@ -304,7 +304,7 @@ contains
         call g_tracer_add_param('sE_12', param%sE_12,  0.001408)
         call mpp_error(NOTE,'Using Schmidt number coefficients for W14')
     else
-        call mpp_error(FATAL,'Unable to set Schmidt number coefficients for as_param '//as_param_cfc)
+        call mpp_error(FATAL,'Unable to set Schmidt number coefficients for as_param '//trim(as_param_cfc))
     endif
 
     !-----------------------------------------------------------------------
@@ -312,23 +312,7 @@ contains
     !      (1) for CFC11, (2) for CFC12
     !     after Warner and Weiss (1985) DSR, vol 32 for CFC11 and CFC12
     !-----------------------------------------------------------------------
-    if (as_param_cfc == 'W92') then
-        call g_tracer_add_param('A1_11', param%A1_11, -134.1536)
-        call g_tracer_add_param('A2_11', param%A2_11,  203.2156)
-        call g_tracer_add_param('A3_11', param%A3_11,  56.2320)
-        call g_tracer_add_param('A4_11', param%A4_11,  0.0)        ! Not used in W92
-        call g_tracer_add_param('B1_11', param%B1_11, -0.144449)
-        call g_tracer_add_param('B2_11', param%B2_11,  0.092952)
-        call g_tracer_add_param('B3_11', param%B3_11, -0.0159977)
-        call g_tracer_add_param('A1_12', param%A1_12, -122.3246)
-        call g_tracer_add_param('A2_12', param%A2_12,  182.5306)
-        call g_tracer_add_param('A3_12', param%A3_12,  50.5898)
-        call g_tracer_add_param('A4_12', param%A4_12,  0.0)        ! Not used in W92
-        call g_tracer_add_param('B1_12', param%B1_12, -0.145633)
-        call g_tracer_add_param('B2_12', param%B2_12,  0.092509)
-        call g_tracer_add_param('B3_12', param%B3_12, -0.0156627)
-        call mpp_error(NOTE,'Using solubility coefficients for W92')
-    else if (as_param_cfc == 'W14') then
+    if ((trim(as_param_cfc) == 'W92') .or. (trim(as_param_cfc) == 'gfdl_cmip6')) then
         call g_tracer_add_param('A1_11', param%A1_11, -229.9261)
         call g_tracer_add_param('A2_11', param%A2_11,  319.6552)
         call g_tracer_add_param('A3_11', param%A3_11,  119.4471)
@@ -343,9 +327,25 @@ contains
         call g_tracer_add_param('B1_12', param%B1_12, -0.143566)
         call g_tracer_add_param('B2_12', param%B2_12,  0.091015)
         call g_tracer_add_param('B3_12', param%B3_12, -0.0153924)
+        call mpp_error(NOTE,'Using solubility coefficients for W92')
+    else if (trim(as_param_cfc) == 'W14') then
+        call g_tracer_add_param('A1_11', param%A1_11, -134.1536)
+        call g_tracer_add_param('A2_11', param%A2_11,  203.2156)
+        call g_tracer_add_param('A3_11', param%A3_11,  56.2320)
+        call g_tracer_add_param('A4_11', param%A4_11,  0.0)        ! Not used in W14
+        call g_tracer_add_param('B1_11', param%B1_11, -0.144449)
+        call g_tracer_add_param('B2_11', param%B2_11,  0.092952)
+        call g_tracer_add_param('B3_11', param%B3_11, -0.0159977)
+        call g_tracer_add_param('A1_12', param%A1_12, -122.3246)
+        call g_tracer_add_param('A2_12', param%A2_12,  182.5306)
+        call g_tracer_add_param('A3_12', param%A3_12,  50.5898)
+        call g_tracer_add_param('A4_12', param%A4_12,  0.0)        ! Not used in W14
+        call g_tracer_add_param('B1_12', param%B1_12, -0.145633)
+        call g_tracer_add_param('B2_12', param%B2_12,  0.092509)
+        call g_tracer_add_param('B3_12', param%B3_12, -0.0156627)
         call mpp_error(NOTE,'Using solubility coefficients for W14')
     else
-        call mpp_error(FATAL,'Unable to set solubility coefficients for as_param '//as_param_cfc)
+        call mpp_error(FATAL,'Unable to set solubility coefficients for as_param '//trim(as_param_cfc))
     endif
 
     !  Rho_0 is used in the Boussinesq
@@ -370,15 +370,15 @@ contains
     character(len=fm_string_len), parameter :: sub_name = 'user_add_tracers'
     real :: as_coeff_cfc
 
-    if (as_param_cfc == 'W92') then
+    if ((trim(as_param_cfc) == 'W92') .or. (trim(as_param_cfc) == 'gfdl_cmip6')) then
         ! Air-sea gas exchange coefficient presented in OCMIP2 protocol.
         ! Value is 0.337 cm/hr in units of m/s.
         as_coeff_cfc = 9.36e-7
-    else if (as_param_cfc == 'W14') then
+    else if (trim(as_param_cfc) == 'W14') then
         ! Value is 0.251 cm/hr in units of m/s
         as_coeff_cfc = 6.972e-7
     else
-        call mpp_error(FATAL,'Unable to set wind speed coefficient coefficients for as_param '//as_param_cfc)
+        call mpp_error(FATAL,'Unable to set wind speed coefficient coefficients for as_param '//trim(as_param_cfc))
     endif
 
     call g_tracer_start_param_list(package_name)!nnz: Does this append?
@@ -621,16 +621,7 @@ contains
        !
        !       Use Bullister and Wisegavger for CCl4
        !---------------------------------------------------------------------
-       if (as_param_cfc == 'W92') then
-           alpha_11 = conv_fac * grid_tmask(i,j,1) * &
-                exp(param%A1_11 + param%A2_11/ta + param%A3_11*log(ta) +&
-                sal * (param%B1_11 + ta * (param%B2_11 + ta * param%B3_11))&
-                )
-           alpha_12 = conv_fac * grid_tmask(i,j,1) * &
-                exp(param%A1_12 + param%A2_12/ta + param%A3_12*log(ta) +&
-                sal * (param%B1_12 + ta * (param%B2_12 + ta * param%B3_12))&
-                )
-       else if (as_param_cfc == 'W14') then
+       if ((trim(as_param_cfc) == 'W92') .or. (trim(as_param_cfc) == 'gfdl_cmip6')) then
            alpha_11 = conv_fac * grid_tmask(i,j,1) * &
                 exp(param%A1_11 + param%A2_11/ta + param%A3_11*log(ta) + param%A4_11*ta*ta +&
                 sal * ((param%B3_11 * ta + param%B2_11) * ta + param%B1_11)&
@@ -639,18 +630,27 @@ contains
                 exp(param%A1_12 + param%A2_12/ta + param%A3_12*log(ta) + param%A4_12*ta*ta +&
                 sal * ((param%B3_12 * ta + param%B2_12) * ta + param%B1_12)&
                 )
+       else if (trim(as_param_cfc) == 'W14') then
+           alpha_11 = conv_fac * grid_tmask(i,j,1) * &
+                exp(param%A1_11 + param%A2_11/ta + param%A3_11*log(ta) +&
+                sal * (param%B1_11 + ta * (param%B2_11 + ta * param%B3_11))&
+                )
+           alpha_12 = conv_fac * grid_tmask(i,j,1) * &
+                exp(param%A1_12 + param%A2_12/ta + param%A3_12*log(ta) +&
+                sal * (param%B1_12 + ta * (param%B2_12 + ta * param%B3_12))&
+                )
        endif
 
        !---------------------------------------------------------------------
        !     Calculate Schmidt numbers
        !      use coefficients given by Zheng et al (1998), JGR vol 103, C1
        !---------------------------------------------------------------------
-       if (as_param_cfc == 'W92') then
+       if (trim(as_param_cfc) == 'W92') then
            sc_no_11(i,j) = param%sA_11 + SST * (param%sB_11 + SST * (param%sC_11 + SST * param%sD_11)) * &
                 grid_tmask(i,j,1)
            sc_no_12(i,j) = param%sA_12 + SST * (param%sB_12 + SST * (param%sC_12 + SST * param%sD_12)) * &
                 grid_tmask(i,j,1)
-       else if (as_param_cfc == 'W14') then
+       else if ((trim(as_param_cfc) == 'W14') .or. (trim(as_param_cfc) == 'gfdl_cmip6')) then
            sc_no_11(i,j) = param%sA_11 + SST * (param%sB_11 + SST * (param%sC_11 + SST * (param%sD_11 + &
                 SST * param%sE_11))) * grid_tmask(i,j,1)
            sc_no_12(i,j) = param%sA_12 + SST * (param%sB_12 + SST * (param%sC_12 + SST * (param%sD_12 + &

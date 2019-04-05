@@ -68,7 +68,7 @@ module generic_SF6
   !The following variables for using this module
   ! are overwritten by generic_tracer_nml namelist
   logical, save :: do_generic_SF6 = .false.
-  character(len=3), save :: as_param_SF6   = 'W14'
+  character(len=10), save :: as_param_SF6   = 'gfdl_cmip6'
 
   real, parameter :: epsln=1.0e-30
   real, parameter :: missing_value1=-1.0e+10
@@ -250,7 +250,7 @@ contains
     !         for SF6
     !-----------------------------------------------------------------------
     !    g_tracer_add_param(name   , variable   ,  default_value)
-    if (as_param_SF6 == 'W14') then
+    if ((trim(as_param_SF6) == 'W14') .or. (trim(as_param_SF6) == 'gfdl_cmip6')) then
         call g_tracer_add_param('sA', param%sA,  3177.5)
         call g_tracer_add_param('sB', param%sB, -200.57)
         call g_tracer_add_param('sC', param%sC,  6.8865)
@@ -258,7 +258,7 @@ contains
         call g_tracer_add_param('sE', param%sE,  0.0010877)
         call mpp_error(NOTE,'Using Schmidt number coefficients for W14')
     else
-        call mpp_error(FATAL,'Unable to set Schmidt number coefficients for as_param '//as_param_SF6)
+        call mpp_error(FATAL,'Unable to set Schmidt number coefficients for as_param '//trim(as_param_SF6))
     endif
 
     !-----------------------------------------------------------------------
@@ -268,7 +268,16 @@ contains
     !
     ! NOTE: Constants below DO NOT match those in Orr et al. 2017 GMDD
     !-----------------------------------------------------------------------
-    if (as_param_SF6 == 'W92') then
+    if ((trim(as_param_SF6) == 'W92') .or. (trim(as_param_SF6) == 'gfdl_cmip6')) then
+        call g_tracer_add_param('A1', param%A1, -80.0343)
+        call g_tracer_add_param('A2', param%A2,  117.232)
+        call g_tracer_add_param('A3', param%A3,  29.5817)
+        call g_tracer_add_param('A4', param%A4,  0.0)        ! Not used for W92
+        call g_tracer_add_param('B1', param%B1,  0.0335183)
+        call g_tracer_add_param('B2', param%B2, -0.0373942)
+        call g_tracer_add_param('B3', param%B3,  0.00774862)
+        call mpp_error(NOTE,'Using solubility coefficients for W92')
+    else if (trim(as_param_SF6) == 'W14') then
         call g_tracer_add_param('A1', param%A1, -96.5975)
         call g_tracer_add_param('A2', param%A2,  139.883)
         call g_tracer_add_param('A3', param%A3,  37.8193)
@@ -276,18 +285,9 @@ contains
         call g_tracer_add_param('B1', param%B1,  0.0310693)
         call g_tracer_add_param('B2', param%B2, -0.0356385)
         call g_tracer_add_param('B3', param%B3,  0.00743254)
-        call mpp_error(NOTE,'Using solubility coefficients for W92')
-    else if (as_param_SF6 == 'W14') then
-        call g_tracer_add_param('A1', param%A1, -80.0343)
-        call g_tracer_add_param('A2', param%A2,  117.232)
-        call g_tracer_add_param('A3', param%A3,  29.5817)
-        call g_tracer_add_param('A4', param%A4,  0.0)
-        call g_tracer_add_param('B1', param%B1,  0.0335183)
-        call g_tracer_add_param('B2', param%B2, -0.0373942)
-        call g_tracer_add_param('B3', param%B3,  0.00774862)
         call mpp_error(NOTE,'Using solubility coefficients for W14')
     else
-        call mpp_error(FATAL,'Unable to set solubility coefficients for as_param '//as_param_SF6)
+        call mpp_error(FATAL,'Unable to set solubility coefficients for as_param '//trim(as_param_SF6))
     endif
 
 
@@ -315,15 +315,15 @@ contains
     character(len=fm_string_len), parameter :: sub_name = 'user_add_tracers'
     real :: as_coeff_SF6
 
-    if (as_param_SF6 == 'W92') then
+    if ((trim(as_param_SF6) == 'W92') .or. (trim(as_param_SF6) == 'gfdl_cmip6')) then
         ! Air-sea gas exchange coefficient presented in OCMIP2 protocol.
         ! Value is 0.337 cm/hr in units of m/s.
         as_coeff_SF6 = 9.36e-7
-    else if (as_param_SF6 == 'W14') then
+    else if (trim(as_param_SF6) == 'W14') then
         ! Value is 0.251 cm/hr in units of m/s
         as_coeff_SF6 = 6.972e-7
     else
-        call mpp_error(FATAL,'Unable to set wind speed coefficient coefficients for as_param '//as_param_SF6)
+        call mpp_error(FATAL,'Unable to set wind speed coefficient coefficients for as_param '//trim(as_param_SF6))
     endif
 
     call g_tracer_start_param_list(package_name)!nnz: Does this append?
@@ -527,13 +527,13 @@ contains
        !     Calculate solubilities
        !---------------------------------------------------------------------
 
-       if (as_param_sf6 == 'W92') then
+       if ((trim(as_param_sf6) == 'W92') .or. (trim(as_param_sf6) == 'gfdl_cmip6')) then
            alpha = conv_fac * grid_tmask(i,j,1) * &
                exp(param%A1 + param%A2/ta + param%A3*log(ta) +&
                sal * (param%B1 + ta * (param%B2 + ta * param%B3))&
                )
 
-       else if (as_param_sf6 == 'W14') then
+       else if (trim(as_param_sf6) == 'W14') then
            alpha = conv_fac * grid_tmask(i,j,1) * &
                exp(param%A1 + param%A2/ta + param%A3*log(ta) + param%A4*ta*ta +&
                sal * ((param%B3 * ta + param%B2) * ta + param%B1)&
@@ -543,7 +543,7 @@ contains
        !---------------------------------------------------------------------
        !     Calculate Schmidt numbers
        !---------------------------------------------------------------------
-       if (as_param_sf6 == 'W14') then
+       if ((trim(as_param_sf6) == 'W14') .or. (trim(as_param_sf6) == 'gfdl_cmip6')) then
            sc_no(i,j) = param%sA + SST * (param%sB + SST * (param%sC + SST * (param%sD + &
                SST * param%sE))) * grid_tmask(i,j,1)
        endif

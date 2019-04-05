@@ -223,7 +223,7 @@ module generic_abiotic
   !The following variables for using this module
   ! are overwritten by generic_tracer_nml namelist
   logical, save :: do_generic_abiotic = .false.
-  character(len=3), save :: as_param_abiotic   = 'W92'
+  character(len=10), save :: as_param_abiotic   = 'gfdl_cmip6'
 
   real, parameter :: sperd = 24.0 * 3600.0
   real, parameter :: spery = 365.25 * sperd
@@ -585,13 +585,13 @@ contains
     !-----------------------------------------------------------------------
     ! CO2 Schmidt number coefficients
     !-----------------------------------------------------------------------
-    if (as_param_abiotic == 'W92') then
+    if ((trim(as_param_abiotic) == 'W92') .or. (trim(as_param_abiotic) == 'gfdl_cmip6')) then
         call g_tracer_add_param('sA_co2', abiotic%sA_co2, 2068.9)
         call g_tracer_add_param('sB_co2', abiotic%sB_co2, -118.63)
         call g_tracer_add_param('sC_co2', abiotic%sC_co2, 2.9311)
         call g_tracer_add_param('sD_co2', abiotic%sD_co2, -0.027)
         call g_tracer_add_param('sE_co2', abiotic%sE_co2, 0.0)      ! Not used in W92
-    else if (as_param_abiotic == 'W14') then
+    else if (trim(as_param_abiotic) == 'W14') then
         call g_tracer_add_param('sA_co2', abiotic%sA_co2,  2116.8)
         call g_tracer_add_param('sB_co2', abiotic%sB_co2, -136.25)
         call g_tracer_add_param('sC_co2', abiotic%sC_co2,  4.7353)
@@ -640,15 +640,15 @@ contains
     character(len=fm_string_len), parameter :: sub_name = 'user_add_tracers'
     real :: as_coeff_abiotic
 
-    if (as_param_abiotic == 'W92') then
+    if ((trim(as_param_abiotic) == 'W92') .or. (trim(as_param_abiotic) == 'gfdl_cmip6')) then
         ! Air-sea gas exchange coefficient presented in OCMIP2 protocol.
         ! Value is 0.337 cm/hr in units of m/s.
         as_coeff_abiotic = 9.36e-7
-    else if (as_param_abiotic == 'W14') then
+    else if (trim(as_param_abiotic) == 'W14') then
         ! Value is 0.251 cm/hr in units of m/s
         as_coeff_abiotic = 6.972e-7
     else
-        call mpp_error(FATAL,'Unable to set wind speed coefficient coefficients for as_param '//as_param_abiotic)
+        call mpp_error(FATAL,'Unable to set wind speed coefficient coefficients for as_param '//trim(as_param_abiotic))
     endif
 
     call g_tracer_start_param_list(package_name)!nnz: Does this append?
@@ -1109,12 +1109,22 @@ contains
        !   NOTE: FOR NOW, D14C fixed at 0 permil!! Need to fix this later.
        !---------------------------------------------------------------------
 
-       if (as_param_abiotic == 'W92') then
+       if ((trim(as_param_abiotic) == 'W92') .or. (trim(as_param_abiotic) == 'gfdl_cmip6')) then
            abco2_sc_no(i,j)  =  abiotic%sA_co2 + ST * (abiotic%sB_co2 + ST * (abiotic%sC_co2 + ST * abiotic%sD_co2)) * &
                                 grid_tmask(i,j,1)
 
            ab14co2_sc_no(i,j) = abiotic%sA_co2 + ST * (abiotic%sB_co2 + ST * (abiotic%sC_co2 + ST * abiotic%sD_co2)) * &
                                 grid_tmask(i,j,1)
+
+       else if (trim(as_param_abiotic) == 'W14') then
+           abco2_sc_no(i,j) = abiotic%sA_co2 + ST*(abiotic%sB_co2 + ST*(abiotic%sC_co2 + & 
+                                               ST*(abiotic%sD_co2 + ST*abiotic%sE_co2))) * &
+                                               grid_tmask(i,j,1)
+
+           ab14co2_sc_no(i,j) = abiotic%sA_co2 + ST*(abiotic%sB_co2 + ST*(abiotic%sC_co2 + & 
+                                               ST*(abiotic%sD_co2 + ST*abiotic%sE_co2))) * &
+                                               grid_tmask(i,j,1)
+
        endif
 
        ! sc_no_term = sqrt(660.0 / (sc_co2 + epsln))
