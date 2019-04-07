@@ -203,6 +203,7 @@ module generic_abiotic
   use g_tracer_utils,    only: g_tracer_set_values,g_tracer_get_pointer,g_tracer_get_common
   use g_tracer_utils,    only: g_tracer_get_values  
   use g_tracer_utils,    only: register_diag_field=>g_register_diag_field
+  use g_tracer_utils,    only: is_root_pe
 
   use FMS_ocmip2_co2calc_mod, only : FMS_ocmip2_co2calc,CO2_dope_vector
 
@@ -591,12 +592,14 @@ contains
         call g_tracer_add_param('sC_co2', abiotic%sC_co2, 2.9311)
         call g_tracer_add_param('sD_co2', abiotic%sD_co2, -0.027)
         call g_tracer_add_param('sE_co2', abiotic%sE_co2, 0.0)      ! Not used in W92
+        if (is_root_pe()) call mpp_error(NOTE,'generic_abiotic: Using Schmidt number coefficients for W92')
     else if (trim(as_param_abiotic) == 'W14') then
         call g_tracer_add_param('sA_co2', abiotic%sA_co2,  2116.8)
         call g_tracer_add_param('sB_co2', abiotic%sB_co2, -136.25)
         call g_tracer_add_param('sC_co2', abiotic%sC_co2,  4.7353)
         call g_tracer_add_param('sD_co2', abiotic%sD_co2, -0.092307)
         call g_tracer_add_param('sE_co2', abiotic%sE_co2, -0.0007555)
+        if (is_root_pe()) call mpp_error(NOTE,'generic_abiotic: Using Schmidt number coefficients for W14')
     else
         call mpp_error(FATAL,'generic_abiotic: unable to set Schmidt number coefficients for CO2.')
     endif

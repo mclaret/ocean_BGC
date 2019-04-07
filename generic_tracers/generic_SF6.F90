@@ -48,7 +48,7 @@ module generic_SF6
 
   use g_tracer_utils, only : g_diag_type, g_diag_field_add
   use g_tracer_utils, only : register_diag_field=>g_register_diag_field
-  use g_tracer_utils, only : g_send_data
+  use g_tracer_utils, only : g_send_data, is_root_pe
 
   implicit none ; private
 
@@ -256,9 +256,9 @@ contains
         call g_tracer_add_param('sC', param%sC,  6.8865)
         call g_tracer_add_param('sD', param%sD, -0.13335)
         call g_tracer_add_param('sE', param%sE,  0.0010877)
-        call mpp_error(NOTE,'Using Schmidt number coefficients for W14')
+        if (is_root_pe()) call mpp_error(NOTE,'generic_sf6: Using Schmidt number coefficients for W14')
     else
-        call mpp_error(FATAL,'Unable to set Schmidt number coefficients for as_param '//trim(as_param_SF6))
+        call mpp_error(FATAL,'generic_sf6: Unable to set Schmidt number coefficients for as_param '//trim(as_param_SF6))
     endif
 
     !-----------------------------------------------------------------------
@@ -276,7 +276,7 @@ contains
         call g_tracer_add_param('B1', param%B1,  0.0335183)
         call g_tracer_add_param('B2', param%B2, -0.0373942)
         call g_tracer_add_param('B3', param%B3,  0.00774862)
-        call mpp_error(NOTE,'Using solubility coefficients for W92')
+        if (is_root_pe()) call mpp_error(NOTE,'generic_sf6: using solubility coefficients for W92')
     else if (trim(as_param_SF6) == 'W14') then
         call g_tracer_add_param('A1', param%A1, -96.5975)
         call g_tracer_add_param('A2', param%A2,  139.883)
@@ -285,7 +285,7 @@ contains
         call g_tracer_add_param('B1', param%B1,  0.0310693)
         call g_tracer_add_param('B2', param%B2, -0.0356385)
         call g_tracer_add_param('B3', param%B3,  0.00743254)
-        call mpp_error(NOTE,'Using solubility coefficients for W14')
+        if (is_root_pe()) call mpp_error(NOTE,'generic_sf6: using solubility coefficients for W14')
     else
         call mpp_error(FATAL,'Unable to set solubility coefficients for as_param '//trim(as_param_SF6))
     endif

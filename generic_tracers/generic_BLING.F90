@@ -2131,7 +2131,7 @@ write (stdlogunit, generic_bling_nml)
     !-----------------------------------------------------------------------
     !      Schmidt number coefficients
     !-----------------------------------------------------------------------
-    if (trim(as_param_bling) == 'W92') then
+    if ((trim(as_param_bling) == 'W92') .or. (trim(as_param_bling) == 'gfdl_cmip6')) then
         !  Compute the Schmidt number of CO2 in seawater using the 
         !  formulation presented by Wanninkhof (1992, J. Geophys. Res., 97,
         !  7373-7382).
@@ -2148,6 +2148,7 @@ write (stdlogunit, generic_bling_nml)
         call g_tracer_add_param('a3_o2', bling%a3_o2, 3.116)
         call g_tracer_add_param('a4_o2', bling%a4_o2, -0.0306)
         call g_tracer_add_param('a5_o2', bling%a5_o2, 0.0)       ! Not used for W92
+        if (is_root_pe()) call mpp_error(NOTE,'generic_bling: Using Schmidt number coefficients for W92')
     else if (trim(as_param_bling) == 'W14') then
         !  Compute the Schmidt number of CO2 in seawater using the 
         !  formulation presented by Wanninkhof 
@@ -2165,6 +2166,7 @@ write (stdlogunit, generic_bling_nml)
         call g_tracer_add_param('a3_o2', bling%a3_o2, 5.2122)
         call g_tracer_add_param('a4_o2', bling%a4_o2, -0.10939)
         call g_tracer_add_param('a5_o2', bling%a5_o2, 0.00093777)
+        if (is_root_pe()) call mpp_error(NOTE,'generic_bling: Using Schmidt number coefficients for W14')
     else
         call mpp_error(FATAL,'generic_BLING: unable to set Schmidt number coefficients for as_param '//trim(as_param_bling))
     endif
@@ -5822,15 +5824,15 @@ bling%wrk(i,j,k) = dzt(i,j,k)
          !  formulation presented by Wanninkhof (1992, J. Geophys. Res., 97,
          !  7373-7382).
          !---------------------------------------------------------------------
-         if (trim(as_param_bling) == 'W92') then
+         if ((trim(as_param_bling) == 'W92') .or. (trim(as_param_bling) == 'gfdl_cmip6')) then
            co2_sc_no(i,j) = bling%a1_co2 + ST*(bling%a2_co2 + ST*(bling%a3_co2 + ST*bling%a4_co2)) * & 
               grid_tmask(i,j,1)
-           if (is_root_pe()) call mpp_error(NOTE,'CNT entered W92 for CO2 SNo')
+           ! if (is_root_pe()) call mpp_error(NOTE,'generic_bling: CNT entered W92 for CO2 SNo')
          else if (trim(as_param_bling) == 'W14') then
            co2_sc_no(i,j) = bling%a1_co2 + ST*(bling%a2_co2 + ST*(bling%a3_co2 + & 
                                                ST*(bling%a4_co2 + ST*bling%a5_co2)  ) ) * &
               grid_tmask(i,j,1)
-           if (is_root_pe()) call mpp_error(NOTE,'CNT entered W14 for CO2 SNo')
+           ! if (is_root_pe()) call mpp_error(NOTE,'generic_bling: CNT entered W14 for CO2 SNo')
          endif
   !       sc_no_term = sqrt(660.0 / (sc_co2 + epsln))
   !
@@ -5865,7 +5867,7 @@ bling%wrk(i,j,k) = dzt(i,j,k)
          !---------------------------------------------------------------------
 
          sal = SSS(i,j) ; ST = SST(i,j)
-         if (trim(as_param_bling) == 'W92') then
+         if ((trim(as_param_bling) == 'W92') .or. (trim(as_param_bling) == 'gfdl_cmip6')) then
            co2_sc_no(i,j) = bling%a1_co2 + ST*(bling%a2_co2 + ST*(bling%a3_co2 + ST*bling%a4_co2)) * & 
               grid_tmask(i,j,1)
          else if (trim(as_param_bling) == 'W14') then
@@ -5895,15 +5897,15 @@ bling%wrk(i,j,k) = dzt(i,j,k)
          !     13CO2 - schmidt number is calculated same as before, as is alpha.
          !---------------------------------------------------------------------
          sal = SSS(i,j) ; ST = SST(i,j)
-         if (trim(as_param_bling) == 'W92') then
+         if ((trim(as_param_bling) == 'W92') .or. (trim(as_param_bling) == 'gfdl_cmip6')) then
            co2_sc_no(i,j) = bling%a1_co2 + ST*(bling%a2_co2 + ST*(bling%a3_co2 + ST*bling%a4_co2)) * & 
               grid_tmask(i,j,1)
-           if (is_root_pe()) call mpp_error(NOTE,'CNT entered W92 for 13CO2 SNo')
+           ! if (is_root_pe()) call mpp_error(NOTE,'generic_bling: CCNT entered W92 for 13CO2 SNo')
          else if (trim(as_param_bling) == 'W14') then 
            co2_sc_no(i,j) = bling%a1_co2 + ST*(bling%a2_co2 + ST*(bling%a3_co2 + & 
                                                ST*(bling%a4_co2 + ST*bling%a5_co2)  ) ) * &
               grid_tmask(i,j,1)
-           if (is_root_pe()) call mpp_error(NOTE,'CNT entered W14 for 13CO2 SNo')
+           ! if (is_root_pe()) call mpp_error(NOTE,'generic_bling: CCNT entered W14 for 13CO2 SNo')
          endif
        
          c13o2_alpha(i,j) = c13o2_alpha(i,j) * bling%Rho_0 
@@ -5971,15 +5973,15 @@ bling%wrk(i,j,k) = dzt(i,j,k)
        ! In 'ocmip2_generic' atmos_ocean_fluxes.F90 coupler formulation,
        ! the schmidt number is carried in explicitly
        !
-       if (trim(as_param_bling) == 'W92') then
+       if ((trim(as_param_bling) == 'W92') .or. (trim(as_param_bling) == 'gfdl_cmip6')) then
          o2_sc_no(i,j)  = bling%a1_o2 + ST * (bling%a2_o2 + ST * (bling%a3_o2 + ST * bling%a4_o2 )) * &
             grid_tmask(i,j,1)
-         if (is_root_pe()) call mpp_error(NOTE,'CNT entered W92 for O2 SNo')
+         ! if (is_root_pe()) call mpp_error(NOTE,'generic_bling: CCNT entered W92 for O2 SNo')
        else if (trim(as_param_bling) == 'W14') then
          o2_sc_no(i,j) = bling%a1_o2 + ST*(bling%a2_o2 + ST*(bling%a3_o2 + &
                                             ST*(bling%a4_o2 + ST*bling%a5_o2)  ) ) * &
             grid_tmask(i,j,1)
-         if (is_root_pe()) call mpp_error(NOTE,'CNT entered W14 for O2 SNo')
+         ! if (is_root_pe()) call mpp_error(NOTE,'generic_bling: CCNT entered W14 for O2 SNo')
        endif
        !
        !      renormalize the alpha value for atm o2

@@ -58,7 +58,7 @@ module generic_CFC
 
   use g_tracer_utils, only : g_diag_type, g_diag_field_add
   use g_tracer_utils, only : register_diag_field=>g_register_diag_field
-  use g_tracer_utils, only : g_send_data
+  use g_tracer_utils, only : g_send_data, is_root_pe
 
   implicit none ; private
 
@@ -290,7 +290,7 @@ contains
         call g_tracer_add_param('sC_12', param%sC_12,  6.1908)
         call g_tracer_add_param('sD_12', param%sD_12, -0.067430)
         call g_tracer_add_param('sE_12', param%sE_12,  0.0)      ! Not used for W92
-        call mpp_error(NOTE,'Using Schmidt number coefficients for W92')
+        if (is_root_pe()) call mpp_error(NOTE,'generic_cfc: using Schmidt number coefficients for W92')
     else if ((trim(as_param_cfc) == 'W14') .or. (trim(as_param_cfc) == 'gfdl_cmip6')) then 
         call g_tracer_add_param('sA_11', param%sA_11,  3579.2)
         call g_tracer_add_param('sB_11', param%sB_11, -222.63)
@@ -302,7 +302,7 @@ contains
         call g_tracer_add_param('sC_12', param%sC_12,  8.7603)
         call g_tracer_add_param('sD_12', param%sD_12, -0.1716)
         call g_tracer_add_param('sE_12', param%sE_12,  0.001408)
-        call mpp_error(NOTE,'Using Schmidt number coefficients for W14')
+        if (is_root_pe()) call mpp_error(NOTE,'generic_cfc: using Schmidt number coefficients for W14')
     else
         call mpp_error(FATAL,'Unable to set Schmidt number coefficients for as_param '//trim(as_param_cfc))
     endif
@@ -327,7 +327,7 @@ contains
         call g_tracer_add_param('B1_12', param%B1_12, -0.143566)
         call g_tracer_add_param('B2_12', param%B2_12,  0.091015)
         call g_tracer_add_param('B3_12', param%B3_12, -0.0153924)
-        call mpp_error(NOTE,'Using solubility coefficients for W92')
+        if (is_root_pe()) call mpp_error(NOTE,'generic_cfc: using solubility coefficients for W92')
     else if (trim(as_param_cfc) == 'W14') then
         call g_tracer_add_param('A1_11', param%A1_11, -134.1536)
         call g_tracer_add_param('A2_11', param%A2_11,  203.2156)
@@ -343,7 +343,7 @@ contains
         call g_tracer_add_param('B1_12', param%B1_12, -0.145633)
         call g_tracer_add_param('B2_12', param%B2_12,  0.092509)
         call g_tracer_add_param('B3_12', param%B3_12, -0.0156627)
-        call mpp_error(NOTE,'Using solubility coefficients for W14')
+        if (is_root_pe()) call mpp_error(NOTE,'generic_cfc: using solubility coefficients for W14')
     else
         call mpp_error(FATAL,'Unable to set solubility coefficients for as_param '//trim(as_param_cfc))
     endif
