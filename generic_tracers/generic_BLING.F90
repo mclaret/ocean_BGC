@@ -218,7 +218,7 @@ module generic_BLING
   !The following variables for using this module 
   ! are overwritten by generic_tracer_nml namelist
   logical, save :: do_generic_BLING = .false.
-  character(len=3), save :: as_param_bling = 'gfdl_cmip6'
+  character(len=10), save :: as_param_bling = 'gfdl_cmip6'
 
   real, parameter :: sperd = 24.0 * 3600.0
   real, parameter :: spery = 365.25 * sperd
