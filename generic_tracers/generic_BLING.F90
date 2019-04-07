@@ -3664,7 +3664,7 @@ if (mpp_root_pe().eq.mpp_pe()) print*, 'CNT as_coeff BLING', as_coeff_bling
         else if (trim(co2_calc) == "mocsy") then
           bling%co3_solubility(i,j,k) = bling%f_co3_ion(i,j,k) / (epsln + bling%omega_calc(i,j,k))
         else
-          call mpp_erron(FATAL,"Unable to compute aragonite and calcite saturation states")
+          call mpp_error(FATAL,"Unable to compute aragonite and calcite saturation states")
         endif
 
           ! Calcite CaCO3 production is assumed to be proportional to both calcite supersaturation and
