@@ -69,13 +69,13 @@ module generic_tracer
   use generic_CFC, only : generic_CFC_init, generic_CFC_update_from_source,generic_CFC_update_from_coupler
   use generic_CFC, only : generic_CFC_set_boundary_values, generic_CFC_end, do_generic_CFC
   use generic_CFC, only : generic_CFC_register_diag
-  use generic_CFC, only : as_coeff_cfc
+  use generic_CFC, only : as_param_cfc
 
   use generic_SF6, only : generic_SF6_register
   use generic_SF6, only : generic_SF6_init, generic_SF6_update_from_source,generic_SF6_update_from_coupler
   use generic_SF6, only : generic_SF6_set_boundary_values, generic_SF6_end, do_generic_SF6
   use generic_SF6, only : generic_SF6_register_diag
-  use generic_SF6, only : as_coeff_sf6
+  use generic_SF6, only : as_param_sf6
 
   use generic_ERGOM, only : generic_ERGOM_register, generic_ERGOM_register_diag
   use generic_ERGOM, only : generic_ERGOM_init, generic_ERGOM_update_from_source,generic_ERGOM_update_from_coupler

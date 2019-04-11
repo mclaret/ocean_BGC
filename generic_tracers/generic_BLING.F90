@@ -455,6 +455,8 @@ namelist /generic_bling_nml/ co2_calc, do_13c, do_14c, do_carbon, do_carbon_pre,
 
 !==============================================================================================================
 
+     logical :: init_d13C, init_ca13csed
+
 ! carbon 13. Scalar variables
      real  :: alpha13c_caco3,     &  ! Fractionation for Ca13CO2 uptake
               alpha13c_askinetic, &  ! Air-sea kinetic fractionation for 13CO2
@@ -489,6 +491,7 @@ namelist /generic_bling_nml/ co2_calc, do_13c, do_14c, do_carbon, do_carbon_pre,
 
 ! carbon 13. 2D variables
      real, dimension(:,:), ALLOCATABLE :: &
+          ca13csed_top,     &
           b_di13c,          &
           R13cased,         &
           fca13co3_to_sed,  &
@@ -686,6 +689,7 @@ namelist /generic_bling_nml/ co2_calc, do_13c, do_14c, do_carbon, do_carbon_pre,
 
 ! CARBON13C
     integer :: &
+      id_ca13csed_top     = -1,  & ! Active sediment Ca13CO3 concentration Diagnostic tracer top layer value
       id_jdi13c           = -1,  & ! DI13C source layer integral
       id_jdo13c           = -1,  & ! Semilabile DO13C source layer integral
       id_j13c_uptake      = -1,  & ! 13C uptake layer integral
@@ -1308,6 +1312,11 @@ write (stdlogunit, generic_bling_nml)
       endif                                                   !RADIOCARBON>>
 
       if (do_13c) then     !<<CARBON13C
+    vardesc_temp = vardesc&
+    ("ca13csed_top","Sediment 13C Calcite in top 10 cm layer",'h','L','s','mol m-3','f')
+    bling%id_ca13csed_top = register_diag_field(package_name, vardesc_temp%name, axes(1:2),&
+         init_time, vardesc_temp%longname,vardesc_temp%units, missing_value = missing_value1)
+
     vardesc_temp = vardesc&
     ("b_di13c","Bottom flux of DI13C into sediment",'h','1','s','mol m-2 s-1','f')
     bling%id_b_di13c = register_diag_field(package_name, vardesc_temp%name, axes(1:2),&
@@ -2103,7 +2112,9 @@ write (stdlogunit, generic_bling_nml)
     !     g_tracer_add_param(name   , variable   ,  default_value)
     !call g_tracer_add_param('', bling%,  )
     !
-    call g_tracer_add_param('init', bling%init, .false. )
+    call g_tracer_add_param('init'         , bling%init,         .false. )
+    call g_tracer_add_param('init_d13c'    , bling%init_d13c,     .true. )
+    call g_tracer_add_param('init_ca13csed', bling%init_ca13csed, .true. )
     !
     !  Rho_0 is used in the Boussinesq
     !  approximation to calculations of pressure and
@@ -3296,11 +3307,30 @@ if (mpp_root_pe().eq.mpp_pe()) print*, 'CNT as_coeff BLING', as_coeff_bling
 
       if (bury_caco3) then
         call g_tracer_get_values(tracer_list,'cased'    ,'field',bling%f_cased     ,isd,jsd,ntau=1,positive=.true.)    
+
         if (do_13c) then
-          call g_tracer_get_values(tracer_list,'ca13csed' ,'field',bling%f_ca13csed  ,isd,jsd,ntau=1)
+
+          if (bling%init_ca13csed) then
+            call g_tracer_get_values(tracer_list,'ca13csed' ,'field',bling%f_ca13csed  ,isd,jsd,ntau=1)
+
+            k=1
+            do j = jsc, jec ; do i = isc, iec  !{
+              if ( (bling%f_ca13csed(i,j,k) .lt. -1000) .or. (bling%f_ca13csed(i,j,k) .gt. 1000) ) then
+                bling%f_ca13csed(i,j,k)=0.0
+              else
+                bling%f_ca13csed(i,j,k)=(bling%f_ca13csed(i,j,k)/1000.0+1)*bling%f_cased(i,j,k)*0.0112372
+              endif
+            enddo; enddo
+            bling%init_ca13csed=.false.
+
+          else          
+            call g_tracer_get_values(tracer_list,'ca13csed' ,'field',bling%f_ca13csed  ,isd,jsd,ntau=1, positive=.true.)
+          endif
+
           do j=jsc,jec; do i=isc,iec
             bling%R13cased(i,j)=bling%f_ca13csed(i,j,1)/(epsln+bling%f_cased(i,j,1))
           enddo; enddo
+
         endif
       endif
 
@@ -4608,6 +4638,11 @@ bling%wrk(i,j,k) = dzt(i,j,k)
         call g_tracer_get_values(tracer_list,'dic','runoff_tracer_flux',bling%runoff_flux_dic,isd,jsd)
         call g_tracer_get_values(tracer_list,'alk','runoff_tracer_flux',bling%runoff_flux_alk,isd,jsd)
       endif
+      if (do_13c) then
+         if (bury_caco3) then
+           call g_tracer_set_values(tracer_list,'ca13csed','field', bling%f_ca13csed, isd,jsd,ntau=1)
+         endif
+      endif
       if (do_14c) &
         call g_tracer_get_values(tracer_list,'di14c','runoff_tracer_flux',bling%runoff_flux_di14c,isd,jsd)
     endif                                                    !CARBON CYCLE>>
@@ -4616,7 +4651,6 @@ bling%wrk(i,j,k) = dzt(i,j,k)
     !       Save variables for diagnostics
     !-----------------------------------------------------------------------
     !
-
     if (bling%id_alpha .gt. 0)                                                   &
          used = g_send_data(bling%id_alpha,          bling%alpha,                &
          model_time, rmask = grid_tmask,                                         & 
@@ -4961,6 +4995,10 @@ bling%wrk(i,j,k) = dzt(i,j,k)
          used = g_send_data(bling%id_jdo14c,         bling%jdo14c * bling%rho_0, &
          model_time, rmask = grid_tmask,                                         & 
          is_in=isc, js_in=jsc, ks_in=1,ie_in=iec, je_in=jec, ke_in=nk)
+    if (bling%id_ca13csed_top .gt. 0)                                            &
+         used = g_send_data(bling%id_ca13csed_top,  bling%f_ca13csed(:,:,1),     &
+         model_time, rmask = grid_tmask(:,:,1),                                  &
+         is_in=isc, js_in=jsc,ie_in=iec, je_in=jec)
     if (bling%id_b_di13c .gt. 0)                                                 &
          used = g_send_data(bling%id_b_di13c,        bling%b_di13c,              &
          model_time, rmask = grid_tmask(:,:,1),                                  & 
@@ -5644,30 +5682,53 @@ bling%wrk(i,j,k) = dzt(i,j,k)
 
   !User must provide the calculations for these boundary values.
   subroutine generic_BLING_set_boundary_values(tracer_list,SST,SSS,rho,ilb,jlb,tau,dzt)
-    type(g_tracer_type),          pointer    :: tracer_list
+    type(g_tracer_type),          pointer      :: tracer_list
     real, dimension(ilb:,jlb:),   intent(in)   :: SST, SSS 
     real, dimension(ilb:,jlb:,:,:), intent(in) :: rho
     integer,                        intent(in) :: ilb,jlb,tau
     real, dimension(ilb:,jlb:,:), optional, intent(in) :: dzt
 
-    integer :: isc,iec, jsc,jec,isd,ied,jsd,jed,nk,ntau , i, j
+    integer :: isc,iec, jsc,jec,isd,ied,jsd,jed,nk,ntau , i, j, k
     real    :: sal,ST,o2_saturation
     real    :: tt,tk,ts,ts2,ts3,ts4,ts5
     real    :: alpha13c_aq_DIC, R13dic 
-    real, dimension(:,:,:)  ,pointer  :: grid_tmask
+    real, dimension(:,:,:)  , pointer :: grid_tmask
+    real, dimension(:,:,:,:), pointer :: o2_field
 !    real, dimension(:,:,:), ALLOCATABLE :: o2_field,dic_field,po4_field,alk_field,di14c_field
     real, dimension(:,:,:), ALLOCATABLE :: dic_field,po4_field,alk_field,di14c_field, di13c_field
-    real, dimension(:,:,:,:), pointer :: o2_field
     real, dimension(:,:,:), ALLOCATABLE :: htotal_field,co3_ion_field
-    real, dimension(:,:), ALLOCATABLE :: co2_alpha,co2_csurf,co2_sc_no,o2_alpha,o2_csurf,o2_sc_no
-    real, dimension(:,:), ALLOCATABLE :: co2_sat_alpha,co2_sat_csurf,co2_sat_sc_no
-    real, dimension(:,:), ALLOCATABLE :: c14o2_alpha,c14o2_csurf
-    real, dimension(:,:), ALLOCATABLE :: c13o2_alpha,c13o2_csurf
+    real, dimension(:,:),   ALLOCATABLE :: co2_alpha,co2_csurf,co2_sc_no,o2_alpha,o2_csurf,o2_sc_no
+    real, dimension(:,:),   ALLOCATABLE :: co2_sat_alpha,co2_sat_csurf,co2_sat_sc_no
+    real, dimension(:,:),   ALLOCATABLE :: c14o2_alpha,c14o2_csurf
+    real, dimension(:,:),   ALLOCATABLE :: c13o2_alpha,c13o2_csurf
     character(len=fm_string_len), parameter :: sub_name = 'generic_BLING_set_boundary_values'
 
     !Get the necessary properties
     call g_tracer_get_common(isc,iec,jsc,jec,isd,ied,jsd,jed,nk,ntau,grid_tmask=grid_tmask) 
+!----------------------------------------------------------
+!----------------------------------------------------------
+! d13C patch. To introduce somewhere else
+    if (is_root_pe()) print*, 'CNT not entered init_d13C', bling%init_d13c, do_13c
 
+    if (do_13c .and. bling%init_d13c) then
+ 
+      call g_tracer_get_pointer(tracer_list,'di13c'   , 'field', bling%p_di13c)
+      call g_tracer_get_pointer(tracer_list,'dic'     , 'field', bling%p_dic)
+      call g_tracer_get_pointer(tracer_list,'do13c'   , 'field', bling%p_do13c)
+      call g_tracer_get_pointer(tracer_list,'dop'     , 'field', bling%p_dop)
+   
+      do j = jsc, jec ; do i = isc, iec ; do k = 1, nk  !{
+        bling%p_di13c(i,j,k,tau) =  (bling%p_di13c(i,j,k,tau)/1000.0+1)*bling%p_dic(i,j,k,tau)*0.0112372
+        bling%p_do13c(i,j,k,tau) =  (bling%p_do13c(i,j,k,tau)/1000.0+1)*(106*bling%p_dop(i,j,k,tau))*0.0112372
+      enddo; enddo; enddo !} i,j,k
+
+      bling%init_d13c=.false.
+
+      if (is_root_pe()) print*, 'CNT entered init_d13C'
+
+    endif
+!----------------------------------------------------------
+!----------------------------------------------------------
     allocate(     o2_alpha(isd:ied, jsd:jed)); o2_alpha=0.0
     allocate(     o2_csurf(isd:ied, jsd:jed)); o2_csurf=0.0
     allocate(     o2_sc_no(isd:ied, jsd:jed)); o2_sc_no=0.0
@@ -6220,6 +6281,7 @@ bling%wrk(i,j,k) = dzt(i,j,k)
         allocate(bling%fca13co3_to_sed (isd:ied, jsd:jed));          bling%fca13co3_to_sed=0.0
         allocate(bling%c13o2_csurf     (isd:ied, jsd:jed));          bling%c13o2_csurf=0.0
         allocate(bling%c13o2_alpha     (isd:ied, jsd:jed));          bling%c13o2_alpha=0.0
+        allocate(bling%ca13csed_top    (isd:ied, jsd:jed));          bling%ca13csed_top=0.0
         allocate(bling%wc_vert_int_di13c(isd:ied, jsd:jed));         bling%wc_vert_int_di13c=0.0
         allocate(bling%wc_vert_int_do13c(isd:ied, jsd:jed));         bling%wc_vert_int_do13c=0.0
 
@@ -6408,6 +6470,7 @@ bling%wrk(i,j,k) = dzt(i,j,k)
 
       if (do_13c) then
       deallocate(&
+          bling%ca13csed_top,&
           bling%wc_vert_int_di13c,&
           bling%wc_vert_int_do13c  )
       endif
