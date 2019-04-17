@@ -716,8 +716,11 @@ namelist /generic_bling_nml/ co2_calc, do_13c, do_14c, do_carbon, do_carbon_pre,
       id_alpha13c_DIC_g   = -1,  & ! Equilibrium fractionation from gaseous CO2 to DIC
       id_alpha13c_sm      = -1,  & ! Fractionation from DIC to the organic carbon pool of small phyto
       id_alpha13c_upt     = -1,  & ! Fractionation from DIC to the total organic carbon pool (large+small phyto) 
-      id_wrk              = -1, &  ! Work array
-      id_alpha13c_poc     = -1     ! Fractionation from DIC to the POC pool
+      id_wrk              = -1,  & ! Work array
+      id_alpha13c_poc     = -1,  & ! Fractionation from DIC to the POC pool
+      id_dp13co2          = -1,  &
+      id_13cfriver        = -1,  &
+      id_fg13co2          = -1
 
 !==============================================================================================================
 ! JGJ 2016/08/08 CMIP6 OcnBgchem 
