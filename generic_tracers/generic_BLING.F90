@@ -228,16 +228,17 @@ module generic_BLING
 ! Namelist Options
 
   character(len=10) ::  co2_calc = 'ocmip2'  ! other option is 'mocsy'
-  logical :: do_13c             = .false. ! Requires do_carbon = .true.
-  logical :: do_14c             = .true.  ! Requires do_carbon = .true.
   logical :: do_carbon          = .true.  
-  logical :: do_carbon_pre      = .true.  ! Requires do_carbon = .true.
-  logical :: do_po4_pre         = .true.
   logical :: bury_caco3         = .false. ! Requires do_carbon = .true.
   logical :: bury_pop           = .false. ! Requires do_carbon = .true.
+  logical :: do_carbon_pre      = .true.  ! Requires do_carbon = .true.
+  logical :: do_po4_pre         = .true.
+  logical :: do_14c             = .true.  ! Requires do_carbon = .true.
+  logical :: do_13c             = .false. ! Requires do_carbon = .true.
+  logical :: init_13c           = .false. ! Requires do_13c    = .true.
 
 namelist /generic_bling_nml/ co2_calc, do_13c, do_14c, do_carbon, do_carbon_pre, &
-  do_po4_pre, bury_caco3, bury_pop
+  do_po4_pre, bury_caco3, bury_pop, init_13c
 
   !
   !The following two types contain all the parameters and arrays used in this module.
@@ -455,7 +456,7 @@ namelist /generic_bling_nml/ co2_calc, do_13c, do_14c, do_carbon, do_carbon_pre,
 
 !==============================================================================================================
 
-     logical :: init_d13C, init_ca13csed
+     logical :: init_di13c, init_ca13csed
 
 ! carbon 13. Scalar variables
      real  :: alpha13c_caco3,     &  ! Fractionation for Ca13CO2 uptake
@@ -491,15 +492,18 @@ namelist /generic_bling_nml/ co2_calc, do_13c, do_14c, do_carbon, do_carbon_pre,
 
 ! carbon 13. 2D variables
      real, dimension(:,:), ALLOCATABLE :: &
-          ca13csed_top,     &
-          b_di13c,          &
-          R13cased,         &
-          fca13co3_to_sed,  &
-          fca13csed_burial, &
-          fca13csed_redis , &
-          fpo13c_burial,    &
-          c13o2_csurf,      &
-          c13o2_alpha 
+          ca13csed_top      , &
+          b_di13c           , &
+          R13cased          , &
+          fca13co3_to_sed   , &
+          fca13csed_burial  , &
+          fca13csed_redis   , &
+          fpo13c_burial     , &
+          c13o2_csurf       , &
+          c13o2_alpha       , &   
+          runoff_flux_di13c , &
+          stf_gas_di13c     , &
+          deltap_di13c
 
 !==============================================================================================================
 
@@ -1337,6 +1341,21 @@ write (stdlogunit, generic_bling_nml)
     bling%id_fca13co3_to_sed = register_diag_field(package_name, vardesc_temp%name, axes(1:2),&
          init_time, vardesc_temp%longname,vardesc_temp%units, missing_value = missing_value1)
 
+    vardesc_temp = vardesc&
+    ("stf_gas_di13c","Surface Downward 13CO2 Flux",'h','1','s','kg m-2 s-1','f')
+    bling%id_fg13co2 = register_diag_field(package_name, vardesc_temp%name, axes(1:2), &
+         init_time, vardesc_temp%longname,vardesc_temp%units, missing_value = missing_value1)
+
+    vardesc_temp = vardesc&
+    ("deltap_di13c","Delta P13CO2",'h','1','s','Pa','f')
+    bling%id_dp13co2 = register_diag_field(package_name, vardesc_temp%name, axes(1:2), &
+         init_time, vardesc_temp%longname,vardesc_temp%units, missing_value = missing_value1)
+
+    vardesc_temp = vardesc&
+    ("runoff_flux_di13c","Flux of Inorganic Carbon-13 Into Ocean Surface by Runoff",'h','1','s','mol m-2 s-1','f')
+    bling%id_13cfriver = register_diag_field(package_name, vardesc_temp%name, axes(1:2), &
+         init_time, vardesc_temp%longname,vardesc_temp%units, missing_value = missing_value1)
+
         if (bury_caco3) then
     vardesc_temp = vardesc&
     ("fca13csed_burial","Ca13CO3 permanent burial flux",'h','1','s','mol m-2 s-1','f')
@@ -1435,7 +1454,6 @@ write (stdlogunit, generic_bling_nml)
     ("alpha13c_poc","Fractionation from DIC to the POC pool",'h','L','s','unitless','f') 
     bling%id_alpha13c_poc = register_diag_field(package_name, vardesc_temp%name, axes(1:3),&
          init_time, vardesc_temp%longname,vardesc_temp%units, missing_value = missing_value1)
-
       endif                !CARBON13C>>
 
     vardesc_temp = vardesc&
@@ -2113,7 +2131,7 @@ write (stdlogunit, generic_bling_nml)
     !call g_tracer_add_param('', bling%,  )
     !
     call g_tracer_add_param('init'         , bling%init,         .false. )
-    call g_tracer_add_param('init_d13c'    , bling%init_d13c,     .true. )
+    call g_tracer_add_param('init_di13c'   , bling%init_di13c,    .true. )
     call g_tracer_add_param('init_ca13csed', bling%init_ca13csed, .true. )
     !
     !  Rho_0 is used in the Boussinesq
@@ -2874,8 +2892,6 @@ write (stdlogunit, generic_bling_nml)
 
     endif                                                    !CARBON CYCLE>>
 
-if (mpp_root_pe().eq.mpp_pe()) print*, 'CNT as_coeff BLING', as_coeff_bling
-
   end subroutine user_add_tracers
 
 !#######################################################################
@@ -3310,7 +3326,7 @@ if (mpp_root_pe().eq.mpp_pe()) print*, 'CNT as_coeff BLING', as_coeff_bling
 
         if (do_13c) then
 
-          if (bling%init_ca13csed) then
+          if ( init_13c .and. bling%init_ca13csed) then
             call g_tracer_get_values(tracer_list,'ca13csed' ,'field',bling%f_ca13csed  ,isd,jsd,ntau=1)
 
             k=1
@@ -3322,6 +3338,8 @@ if (mpp_root_pe().eq.mpp_pe()) print*, 'CNT as_coeff BLING', as_coeff_bling
               endif
             enddo; enddo
             bling%init_ca13csed=.false.
+
+if (is_root_pe()) print*, 'CNT entered ca13csed init'
 
           else          
             call g_tracer_get_values(tracer_list,'ca13csed' ,'field',bling%f_ca13csed  ,isd,jsd,ntau=1, positive=.true.)
@@ -4639,7 +4657,10 @@ bling%wrk(i,j,k) = dzt(i,j,k)
         call g_tracer_get_values(tracer_list,'alk','runoff_tracer_flux',bling%runoff_flux_alk,isd,jsd)
       endif
       if (do_13c) then
+         call g_tracer_get_values(tracer_list,'di13c','stf_gas', bling%stf_gas_di13c,isd,jsd)
+         call g_tracer_get_values(tracer_list,'di13c','deltap' , bling%deltap_di13c ,isd,jsd)
          if (bury_caco3) then
+           call g_tracer_get_values(tracer_list,'di13c','runoff_tracer_flux', bling%runoff_flux_di13c,isd,jsd)
            call g_tracer_set_values(tracer_list,'ca13csed','field', bling%f_ca13csed, isd,jsd,ntau=1)
          endif
       endif
@@ -5091,6 +5112,18 @@ bling%wrk(i,j,k) = dzt(i,j,k)
          used = g_send_data(bling%id_alpha13c_poc,    bling%alpha13c_poc,            &
          model_time, rmask = grid_tmask,                                             & 
          is_in=isc, js_in=jsc, ks_in=1,ie_in=iec, je_in=jec, ke_in=nk)
+    if (bling%id_dp13co2 .gt. 0)                                                     &
+        used = g_send_data(bling%id_dp13co2,  bling%deltap_di13c,                    &
+        model_time, rmask = grid_tmask(:,:,1),                                       &
+        is_in=isc, js_in=jsc, ie_in=iec, je_in=jec)
+    if (bling%id_fg13co2 .gt. 0)                                                     &
+        used = g_send_data(bling%id_fg13co2,  bling%stf_gas_di13c,                   &
+        model_time, rmask = grid_tmask(:,:,1),                                       &
+        is_in=isc, js_in=jsc, ie_in=iec, je_in=jec)
+    if (bling%id_13cfriver .gt. 0)                                                   &
+        used = g_send_data(bling%id_13cfriver,  bling%runoff_flux_di13c,             &
+        model_time, rmask = grid_tmask(:,:,1),                                       &
+        is_in=isc, js_in=jsc, ie_in=iec, je_in=jec)
     if (bling%id_wrk .gt. 0)                                                         &
          used = g_send_data(bling%id_wrk,    bling%wrk,                              &
          model_time, rmask = grid_tmask,                                             & 
@@ -5708,9 +5741,8 @@ bling%wrk(i,j,k) = dzt(i,j,k)
 !----------------------------------------------------------
 !----------------------------------------------------------
 ! d13C patch. To introduce somewhere else
-    if (is_root_pe()) print*, 'CNT not entered init_d13C', bling%init_d13c, do_13c
 
-    if (do_13c .and. bling%init_d13c) then
+    if (do_13c .and. init_13c .and. bling%init_di13c) then
  
       call g_tracer_get_pointer(tracer_list,'di13c'   , 'field', bling%p_di13c)
       call g_tracer_get_pointer(tracer_list,'dic'     , 'field', bling%p_dic)
@@ -5722,9 +5754,9 @@ bling%wrk(i,j,k) = dzt(i,j,k)
         bling%p_do13c(i,j,k,tau) =  (bling%p_do13c(i,j,k,tau)/1000.0+1)*(106*bling%p_dop(i,j,k,tau))*0.0112372
       enddo; enddo; enddo !} i,j,k
 
-      bling%init_d13c=.false.
+      bling%init_di13c=.false.
 
-      if (is_root_pe()) print*, 'CNT entered init_d13C'
+if (is_root_pe()) print*, 'CNT2 entered d13C init'
 
     endif
 !----------------------------------------------------------
@@ -6273,20 +6305,23 @@ bling%wrk(i,j,k) = dzt(i,j,k)
         allocate(bling%j13c_doc        (isd:ied, jsd:jed, 1:nk));    bling%j13c_doc=0.0
         allocate(bling%j13c_recycle    (isd:ied, jsd:jed, 1:nk));    bling%j13c_recycle=0.0
         allocate(bling%j13c_reminp     (isd:ied, jsd:jed, 1:nk));    bling%j13c_reminp=0.0
-        allocate(bling%j13ca_reminp    (isd:ied, jsd:jed, 1:nk));    bling%j13ca_reminp=0.0
         allocate(bling%j13ca_uptake    (isd:ied, jsd:jed, 1:nk));    bling%j13ca_uptake=0.0
+        allocate(bling%j13ca_reminp    (isd:ied, jsd:jed, 1:nk));    bling%j13ca_reminp=0.0
         allocate(bling%fpo13c          (isd:ied, jsd:jed, 0:nk));    bling%fpo13c=0.0
         allocate(bling%fca13co3        (isd:ied, jsd:jed, 0:nk));    bling%fca13co3=0.0
         allocate(bling%b_di13c         (isd:ied, jsd:jed));          bling%b_di13c=0.0
         allocate(bling%fca13co3_to_sed (isd:ied, jsd:jed));          bling%fca13co3_to_sed=0.0
         allocate(bling%c13o2_csurf     (isd:ied, jsd:jed));          bling%c13o2_csurf=0.0
         allocate(bling%c13o2_alpha     (isd:ied, jsd:jed));          bling%c13o2_alpha=0.0
-        allocate(bling%ca13csed_top    (isd:ied, jsd:jed));          bling%ca13csed_top=0.0
+        allocate(bling%stf_gas_di13c   (isd:ied, jsd:jed));          bling%stf_gas_di13c=0.0
+        allocate(bling%deltap_di13c     (isd:ied, jsd:jed));         bling%deltap_di13c=0.0
+        allocate(bling%runoff_flux_di13c(isd:ied, jsd:jed));         bling%runoff_flux_di13c=0.0
         allocate(bling%wc_vert_int_di13c(isd:ied, jsd:jed));         bling%wc_vert_int_di13c=0.0
         allocate(bling%wc_vert_int_do13c(isd:ied, jsd:jed));         bling%wc_vert_int_do13c=0.0
 
         if (bury_caco3) then
           allocate(bling%f_ca13csed      (isd:ied, jsd:jed, 1:nk));    bling%f_ca13csed=0.0
+          allocate(bling%ca13csed_top    (isd:ied, jsd:jed));          bling%ca13csed_top=0.0
           allocate(bling%fca13csed_burial(isd:ied, jsd:jed));          bling%fca13csed_burial=0.0
           allocate(bling%fca13csed_redis (isd:ied, jsd:jed));          bling%fca13csed_redis=0.0
           allocate(bling%R13cased        (isd:ied, jsd:jed));          bling%R13cased=0.0  
@@ -6470,9 +6505,45 @@ bling%wrk(i,j,k) = dzt(i,j,k)
 
       if (do_13c) then
       deallocate(&
-          bling%ca13csed_top,&
-          bling%wc_vert_int_di13c,&
-          bling%wc_vert_int_do13c  )
+          bling%f_di13c          , &
+          bling%f_do13c          , &
+          bling%jdi13c           , &
+          bling%jdo13c           , &
+          bling%co2_star         , &
+          bling%alpha13c_DIC_g   , &
+          bling%alpha13c_sm      , &
+          bling%alpha13c_upt     , &
+          bling%alpha13c_poc     , &
+          bling%j13c_uptake      , &
+          bling%j13c_poc         , &
+          bling%j13c_doc         , &
+          bling%j13c_recycle     , &
+          bling%j13c_reminp      , &
+          bling%j13ca_uptake     , &
+          bling%j13ca_reminp     , &
+          bling%fpo13c           , &
+          bling%fca13co3         , &
+          bling%b_di13c          , &
+          bling%fca13co3_to_sed  , &
+          bling%c13o2_csurf      , &
+          bling%c13o2_alpha      , &
+          bling%stf_gas_di13c    , &
+          bling%deltap_di13c     , &
+          bling%runoff_flux_di13c, &
+          bling%wc_vert_int_di13c, &
+          bling%wc_vert_int_do13c, &
+          bling%wrk                 )
+
+          if (bury_caco3) then
+            deallocate (&
+              bling%f_ca13csed       , &
+              bling%ca13csed_top     , &
+              bling%fca13csed_burial , &
+              bling%fca13csed_redis  , &
+              bling%R13cased            )
+          endif
+
+          if (bury_pop) deallocate(bling%fpo13c_burial)
       endif
     endif                                                      !CARBON CYCLE>>
 
