@@ -3384,6 +3384,8 @@ if (is_root_pe()) print*, 'CNT entered ca13csed init'
     do j = jsc, jec ; do i = isc, iec   !{
        bling%hblt_depth(i,j) = hblt_depth(i,j)
 
+bling%wrk(i,j,1)=hblt_depth(i,j)
+
        do nb=1,nbands !{
           if (max_wavelength_band(nb) .lt. 710) then !{
              tmp_irr_band(nb) = max(0.0, sw_pen_band(nb,i,j))
@@ -3746,6 +3748,8 @@ if (is_root_pe()) print*, 'CNT entered ca13csed init'
 
            R13dic = bling%f_di13c(i,j,k)/(epsln + bling%f_dic(i,j,k))
 
+!bling%wrk(i,j,k) = R13dic
+
            bling%alpha13c_sm(i,j,k) =  &
                             bling%alpha13c_aq_g/(bling%alpha13c_DIC_g(i,j,k))* &
       (-0.017*log10(bling%co2_star(i,j,k)*bling%Rho_0*1000.d0+epsln)+1.0034)
@@ -3845,8 +3849,6 @@ if (is_root_pe()) print*, 'CNT entered ca13csed init'
       bling%fpop(i,j,1) = bling%jpop(i,j,1) * rho_dzt(i,j,1) /             &
         (1.0 + dzt(i,j,1) * bling%inv_zremin(i,j,1)) 
 
-bling%wrk(i,j,1) = dzt(i,j,1)
-
     enddo; enddo !} i,j
 
     do k = 2, nk ; do j = jsc, jec ; do i = isc, iec   !{
@@ -3871,8 +3873,6 @@ bling%wrk(i,j,1) = dzt(i,j,1)
         bling%jpop(i,j,k) * rho_dzt(i,j,k)) /                              &
         (1.0 + dzt(i,j,k) * bling%inv_zremin(i,j,k)) 
        
-bling%wrk(i,j,k) = dzt(i,j,k)
-
     enddo; enddo ; enddo !} i,j,k
 
       if (do_14c) then                                        !<<RADIOCARBON
@@ -4225,9 +4225,9 @@ bling%wrk(i,j,k) = dzt(i,j,k)
            endif
            if (bury_pop) then                                 !<<BURY POP
              fpoc_btm = bling%fpop(i,j,k) * bling%c_2_p * sperd * 1000.0
-             bling%fpop_burial(i,j) = (0.013 + 0.53 * fpoc_btm * fpoc_btm)/&
+             bling%fpop_burial(i,j) = min(bling%fpop(i,j,k) , (0.013 + 0.53 * fpoc_btm * fpoc_btm)/&
              ((7.0+fpoc_btm) * (7.0+fpoc_btm)) * bling%fpop(i,j,k) *       &
-             bling%zt(i,j,k) / (bling%z_burial + bling%zt(i,j,k))
+             bling%zt(i,j,k) / (bling%z_burial + bling%zt(i,j,k))                )
              bling%b_dic(i,j) = bling%b_dic(i,j) + bling%fpop_burial(i,j) * bling%c_2_p
              bling%b_o2(i,j)  = bling%b_o2(i,j)  - bling%fpop_burial(i,j) * bling%o2_2_p
              bling%b_po4(i,j) = bling%b_po4(i,j) + bling%fpop_burial(i,j)
@@ -4282,9 +4282,12 @@ bling%wrk(i,j,k) = dzt(i,j,k)
               ! The burial flux of PO13C is proportional to that of POC
               ! w/o applying any fractionation
               R13poc = bling%fpo13c(i,j,k)/(epsln+bling%fpop(i,j,k)*bling%c_2_p)
+
+bling%wrk(i,j,2)=R13poc
+
               bling%fpo13c_burial(i,j) = max ( 0.0 ,                          &
-                                               min ( bling%fpo13c(i,j,k)/dt, &
-                              bling%fpop_burial(i,j)*bling%c_2_p*R13poc ) ) 
+                                               min ( bling%fpo13c(i,j,k), &
+                              bling%fpop_burial(i,j)*bling%c_2_p*R13poc )   ) 
               bling%b_di13c(i,j) = bling%b_di13c(i,j) + bling%fpo13c_burial(i,j)
             endif                                              !BURY POP>>
 
