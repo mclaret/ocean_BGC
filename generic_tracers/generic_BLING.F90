@@ -25,68 +25,70 @@
 !
 ! </OVERVIEW>
 !<DESCRIPTION>
-!   Biogeochemistry with Light, Iron, Nutrient and Gas (BLING) includes an
-!   implicit ecological model of growth limitation by light,
-!   temperature, phosphate and iron, along with dissolved organic
-!   phosphorus and O2 pools.
-!   Food web processing in the euphotic zone and remineralization/
-!   dissolution through the ocean interior are handled as in Dunne et al. 
-!   (2005).  O2 equilibria and gas exchange follow OCMIP2 protocols.
-!   Additional functionality comes from an optional carbon cycle that is 
-!   non-interactive, i.e. does not change the core BLING behaviour, as
-!   well as tracers for radiocarbon (14c), a decomposition of carbon 
-!   components by gas exchange and remineralization (carbon_pre), and a 
-!   decomposition of phosphate as preformed and remineralized (po4_pre).
-!
-! 2017/03/10 - JPD
-! This version includes a suite of changes to make BLING more compatible with 
-! TOPAZ and COBALT:
-!
-! Gas flux formulation updated to MOM6
-! Changed naming convention for "zremin" to "inv_zremin" to be consistent with the units
-!   and half saturation constant for Fed uptake to "k_fed"
-! Values of Fe_2_P_max and k_fe_2_p values increased to TOPAZ values to reduce Eq Pac growth
-! Values of gamma_dop and phi_dop changed to match sdon in TOPAZ to represent
-!   PO4 availability in subtropical gyres
-! CaCO3 production increased to match Dunne et al., 2012
-! CaCO3 mineral protection of sinking material added to reduce nutricline peak
-!   and get more POP to the sea floor
-! A 10% eficiency for Fe release from remineralization sinking particles added
-!   and interior scavenging reduced to match the formulation in COBALT that 
-!   avoids the strong nutricline peak 
-! Calculation of biomass amended to mix within the surface boundary layer and
-!   to respond on a 5 day rather than 2 day timescale.
-! Calculation of Frac_larg and Frac_pop switched from instantaneous PP to biomass
-!   basis to provide ecosystem memory (note: frac_larg from s_over_p seems to have
-!   been implemented as x/(1+x) rather than the xx/(1+xx) in Dunne et al., 2005)
-! Added POP burial based on Dunne et al., 2007 as implemented in COBALT except with
-!   a half saturation length scale of 500 m to represent scouring of shelf sediemnts
-!   preventing burial
-! Changed calculation of frac_lg to be more consistent with the Dunne et al., 20015
-!   calculation of frac_lg and frac_pop as an average concentration representative of
-!   a single surface ocean euphotic zone estimate of ecosystem biomass, productivity,
-!   and particle export, calculate the upper 100 average of biomass as the
-!   input into the calculation of frac_lg.  This is consistent with the idea
-!   that while the phytoplankton pool are primarily passive tracers as
-!   "plankton", zooplankton are able to move through the water column and take
-!   advantage of accumulations of prey such that the ecosystem comes to
-!   equilibrium with an "average" phytoplankton field.
-! Updated the equation for CaCO3 burial to be consistent with Dunne et al., 2012.  This
-!   included raising the global average flux of lithogenic material by over 2 orders of
-!   magnitude.
-! Increased alpha_max to match TOPAZ value for small phytoplankton decrease surface Chl
-!   and deepen primary productivity to agree with JGOFS observations.
-! Changed all internal diagnostics from layer integrals of rates to volumetric rates
-!   to make use of z-coordinate remapping.
-! Converted CO2 calculation from OCMIP2 to MOCSY
-! Reduced maximum growth rate constant, Pc_0, to be consistent with Bissinger et al., 
-!   2010 of 0.82 d-1 at 0C
-! Changed the vertical structure of the sinking velocity from an indefinite linear increase
-!   to a half saturation value approaching a maximum sinking velocity.  This was necessary
-!   to both supply sufficient organic matter remineralization to the Pacific nutricline
-!   and prevent excessive supply of organic matter to the deep Pacific sea floor.
-! Added saturation state dependence of Calcite formation.
-! Added ballast protection by lithogenic material
+!> \mainpage
+!!
+!! \brief Biogeochemistry with Light, Iron, Nutrient and Gas (BLING) 
+!!  includes an implicit ecological model of growth limitation by light,
+!!   temperature, phosphate and iron, along with dissolved organic
+!!   phosphorus and O2 pools.
+!!   Food web processing in the euphotic zone and remineralization/
+!!   dissolution through the ocean interior are handled as in Dunne et al. 
+!!   (2005).  O2 equilibria and gas exchange follow OCMIP2 protocols.
+!!   Additional functionality comes from an optional carbon cycle that is 
+!!   non-interactive, i.e. does not change the core BLING behaviour, as
+!!   well as tracers for radiocarbon (14c), a decomposition of carbon 
+!!   components by gas exchange and remineralization (carbon_pre), and a 
+!!   decomposition of phosphate as preformed and remineralized (po4_pre).
+!!
+!! 2017/03/10 - JPD
+!! This version (BLING.2) includes a suite of changes to make BLING.0 more compatible with 
+!! TOPAZ and COBALT:
+!!
+!! Gas flux formulation updated to MOM6
+!! Changed naming convention for "zremin" to "inv_zremin" to be consistent with the units
+!!   and half saturation constant for Fed uptake to "k_fed"
+!! Values of Fe_2_P_max and k_fe_2_p values increased to TOPAZ values to reduce Eq Pac growth
+!! Values of gamma_dop and phi_dop changed to match sdon in TOPAZ to represent
+!!   PO4 availability in subtropical gyres
+!! CaCO3 production increased to match Dunne et al., 2012
+!! CaCO3 mineral protection of sinking material added to reduce nutricline peak
+!!   and get more POP to the sea floor
+!! A 10% eficiency for Fe release from remineralization sinking particles added
+!!   and interior scavenging reduced to match the formulation in COBALT that 
+!!   avoids the strong nutricline peak 
+!! Calculation of biomass amended to mix within the surface boundary layer and
+!!   to respond on a 5 day rather than 2 day timescale.
+!! Calculation of Frac_larg and Frac_pop switched from instantaneous PP to biomass
+!!   basis to provide ecosystem memory (note: frac_larg from s_over_p seems to have
+!!   been implemented as x/(1+x) rather than the xx/(1+xx) in Dunne et al., 2005)
+!! Added POP burial based on Dunne et al., 2007 as implemented in COBALT except with
+!!   a half saturation length scale of 500 m to represent scouring of shelf sediemnts
+!!   preventing burial
+!! Changed calculation of frac_lg to be more consistent with the Dunne et al., 20015
+!!   calculation of frac_lg and frac_pop as an average concentration representative of
+!!   a single surface ocean euphotic zone estimate of ecosystem biomass, productivity,
+!!   and particle export, calculate the upper 100 average of biomass as the
+!!   input into the calculation of frac_lg.  This is consistent with the idea
+!!   that while the phytoplankton pool are primarily passive tracers as
+!!   "plankton", zooplankton are able to move through the water column and take
+!!   advantage of accumulations of prey such that the ecosystem comes to
+!!   equilibrium with an "average" phytoplankton field.
+!! Updated the equation for CaCO3 burial to be consistent with Dunne et al., 2012.  This
+!!   included raising the global average flux of lithogenic material by over 2 orders of
+!!   magnitude.
+!! Increased alpha_max to match TOPAZ value for small phytoplankton decrease surface Chl
+!!   and deepen primary productivity to agree with JGOFS observations.
+!! Changed all internal diagnostics from layer integrals of rates to volumetric rates
+!!   to make use of z-coordinate remapping.
+!! Converted CO2 calculation from OCMIP2 to MOCSY
+!! Reduced maximum growth rate constant, Pc_0, to be consistent with Bissinger et al., 
+!!   2010 of 0.82 d-1 at 0C
+!! Changed the vertical structure of the sinking velocity from an indefinite linear increase
+!!   to a half saturation value approaching a maximum sinking velocity.  This was necessary
+!!   to both supply sufficient organic matter remineralization to the Pacific nutricline
+!!   and prevent excessive supply of organic matter to the deep Pacific sea floor.
+!! Added saturation state dependence of Calcite formation.
+!! Added ballast protection by lithogenic material
 !
 !
 !</DESCRIPTION>
@@ -116,8 +118,15 @@
 !<NAMELIST NAME="generic_bling_nml">
 !
 !  <DATA NAME="do_13c" TYPE="logical">
-!  If true, then simulate 13C-cycling. Includes 2 prognostic tracers, DI13C
-! and DO13C. Requires that do_carbon = .true. 
+!  If true, then simulate 13C-cycling. 
+!  Includes 2 prognostic tracers, DI13C and DO13C. 
+!  Requires do_carbon = .true. 
+!  </DATA> 
+!
+!  <DATA NAME="init_13c" TYPE="logical">
+!  If true, then initialize DI13C and DO13C using delta13C fields in units of
+!  permille as opposed of using total concentrations in units of mol kg-1.
+!  Requires do_13c= .true.
 !  </DATA> 
 !
 !  <DATA NAME="do_14c" TYPE="logical">
@@ -171,7 +180,13 @@
 !</NAMELIST>
 !
 !----------------------------------------------------------------
-
+!> \mainpage
+!!
+!! \brief 
+!----------------------------------------------------------------
+! For printing values do: if (is_root_pe()) print*,
+!----------------------------------------------------------------
+!
 module generic_BLING
 
   use coupler_types_mod, only: coupler_2d_bc_type
@@ -246,76 +261,76 @@ namelist /generic_bling_nml/ co2_calc, do_13c, do_14c, do_carbon, do_carbon_pre,
   type generic_BLING_type
 
      logical  ::            &
-          init,             &                  ! If tracers should be initializated
-          force_update_fluxes,&                ! If OCMIP2 tracers fluxes should be updated every coupling timesteps
-                                               !    when update_from_source is not called every coupling timesteps
-                                               !    as is the case with MOM6  THERMO_SPANS_COUPLING option
+          init,             &                  !< If tracers should be initializated
+          force_update_fluxes,&                !< If OCMIP2 tracers fluxes should be updated every coupling timesteps
+                                               !!    when update_from_source is not called every coupling timesteps
+                                               !!    as is the case with MOM6  THERMO_SPANS_COUPLING option
           prevent_neg_o2,   &
           tracer_debug
 
      real  ::               &
-          alpha_max,        &                  ! Quantum yield under low light, Fe-replete
-          alpha_min,        &                  ! Quantum yield under low light, Fe-limited
-          c_2_p,            &                  ! Carbon to Phosphorus ratio
-          ca_2_p,           &                  ! CaCO3 to Phosphorus ratio (of small phytoplankton)
-          ca_remin_depth,   &                  ! CaCO3 dissolution length scale (subject to omega)
-          caco3_sat_max,    &                  ! Maximum saturation state effect
-          chl_min,          &                  ! Minimum chl concentration allowed (for numerical stability)
-          def_fe_min,       &                  ! Minimum value for iron deficiency term
-          doc_background,   &                  ! Background refractory DOC concentration (mol m-3)
-          fast_gasex,       &                  ! Gas exchange rate multiplier for DIC_sat
-          fe_2_p_max,       &                  ! Iron to Phosphate uptake ratio scaling
-          fe_2_p_sed,       &                  ! Iron to Phosphorus ratio in sediments
-          felig_bkg,        &                  ! Iron ligand concentration
-          frac_lg_max,      &                  ! Maximum fraction of large phytoplankton in ecosystem
-          frac_lg_min,      &                  ! Minimum fraction of large phytoplankton in ecosystem
-          frac_pop_max,     &                  ! Maximum fraction of Primary Production going to POP
-          gamma_biomass,    &                  ! Biomass adjustment timescale
-          gamma_dop,        &                  ! Dissolved organic phosphorus decay
-          gamma_irr_mem,    &                  ! Photoadaptation timescale
-          gamma_pop,        &                  ! Patriculate Organic Phosphorus decay
-          gamma_tag,        &                  ! Restoring time constant for nutrient source tracers
-          half_life_14c,    &                  ! Radiocarbon half-life
-          k_fe_2_p,         &                  ! Fe:P half-saturation constant
-          k_fed,            &                  ! Iron half-saturation concentration
-          k_o2,             &                  ! Oxygen half-saturation concentration
-          k_po4,            &                  ! Phosphate half-saturation concentration
-          kappa_eppley,     &                  ! Temperature dependence
-          kappa_remin,      &                  ! Temperature dependence for particle fractionation
-          kfe_inorg,        &                  ! Iron scavenging, 2nd order
-          kfe_eq_lig_max,   &                  ! Maximum light-dependent iron ligand stability constant
-          kfe_eq_lig_min,   &                  ! Minimum light-dependent iron ligand stability constant
-          kfe_eq_lig_irr,   &                  ! Irradiance scaling for iron ligand stability constant
-          kfe_eq_lig_femin, &                  ! Low-iron threshold for ligand stability constant
-          kfe_org,          &                  ! Iron scavenging, 1st order
-          lambda0,          &                  ! Total mortality rate constant
-          lambda_14c,       &                  ! Radiocarbon decay rate
-          resp_frac,        &                  ! Biomass maintenace requirement as fraction of pc_0
-          mass_2_p,         &                  ! Organic matter mass to Phosphorus ratio
-          n_2_p,            &                  ! Nitrogen to Phosphorus ratio
-          o2_2_p,           &                  ! Oxygen to Phosphorus ratio
-          o2_min,           &                  ! Anaerobic respiration threshold
-          P_star,           &                  ! Pivotal phytoplankton concentration
-          pc_0,             &                  ! Maximum carbon-specific growth rate
-          phi_dop,          &                  ! Dissolved organic phosphorus fraction of uptake
-          phi_lg,           &                  ! Fraction of small phytoplankton converted to detritus
-          phi_sm,           &                  ! Fraction of large phytoplankton converted to detritus
-          remin_eff_fedet,  &                  ! Fractional Fedet remin efficiency during Pdet remin
-          remin_min,        &                  ! Minimum remineralization under low O2
-          rho_dense,        &                  ! Deep boundary density for exposure tracers
-          rho_light,        &                  ! Shallow boundary density for exposure tracers
-          rpcaco3,          &                  ! Ballast protection ratio by CaCO3
-          rplith,           &                  ! Ballast protection ratio by Lithogenic material
-          lith_flux,        &                  ! Seafloor flux of lithogenic material (global constant)
-          thetamax_hi,      &                  ! Maximum Chl:C ratio when iron-replete
-          thetamax_lo,      &                  ! Maximum Chl:C ratio when iron-limited
-          wsink0,           &                  ! Sinking rate at surface
-          wsinkz,           &                  ! Half saturation depth of sinking velocity increase
-          wsinkmax,         &                  ! Maximum sinking rate
-          z_burial,         &                  ! Depth scale of shelf scouring preventing organic burial
-          z_bact,           &                  ! Depth scale of colonization of bacteria for remineralization of sinking material
-          z_sed,            &                  ! Thickness of active sediment layer
-          inv_z_min                            ! Maximum remineralization length scale
+          alpha_max,        &                  !< Quantum yield under low light, Fe-replete
+          alpha_min,        &                  !< Quantum yield under low light, Fe-limited
+          c_2_p,            &                  !< Carbon to Phosphorus ratio
+          ca_2_p,           &                  !< CaCO3 to Phosphorus ratio (of small phytoplankton)
+          ca_remin_depth,   &                  !< CaCO3 dissolution length scale (subject to omega)
+          caco3_sat_max,    &                  !< Maximum saturation state effect
+          chl_min,          &                  !< Minimum chl concentration allowed (for numerical stability)
+          def_fe_min,       &                  !< Minimum value for iron deficiency term
+          doc_background,   &                  !< Background refractory DOC concentration (mol m-3)
+          fast_gasex,       &                  !< Gas exchange rate multiplier for DIC_sat
+          fe_2_p_max,       &                  !< Iron to Phosphate uptake ratio scaling
+          fe_2_p_sed,       &                  !< Iron to Phosphorus ratio in sediments
+          felig_bkg,        &                  !< Iron ligand concentration
+          frac_lg_max,      &                  !< Maximum fraction of large phytoplankton in ecosystem
+          frac_lg_min,      &                  !< Minimum fraction of large phytoplankton in ecosystem
+          frac_pop_max,     &                  !< Maximum fraction of Primary Production going to POP
+          gamma_biomass,    &                  !< Biomass adjustment timescale
+          gamma_dop,        &                  !< Dissolved organic phosphorus decay
+          gamma_irr_mem,    &                  !< Photoadaptation timescale
+          gamma_pop,        &                  !< Patriculate Organic Phosphorus decay
+          gamma_tag,        &                  !< Restoring time constant for nutrient source tracers
+          half_life_14c,    &                  !< Radiocarbon half-life
+          k_fe_2_p,         &                  !< Fe:P half-saturation constant
+          k_fed,            &                  !< Iron half-saturation concentration
+          k_o2,             &                  !< Oxygen half-saturation concentration
+          k_po4,            &                  !< Phosphate half-saturation concentration
+          kappa_eppley,     &                  !< Temperature dependence
+          kappa_remin,      &                  !< Temperature dependence for particle fractionation
+          kfe_inorg,        &                  !< Iron scavenging, 2nd order
+          kfe_eq_lig_max,   &                  !< Maximum light-dependent iron ligand stability constant
+          kfe_eq_lig_min,   &                  !< Minimum light-dependent iron ligand stability constant
+          kfe_eq_lig_irr,   &                  !< Irradiance scaling for iron ligand stability constant
+          kfe_eq_lig_femin, &                  !< Low-iron threshold for ligand stability constant
+          kfe_org,          &                  !< Iron scavenging, 1st order
+          lambda0,          &                  !< Total mortality rate constant
+          lambda_14c,       &                  !< Radiocarbon decay rate
+          resp_frac,        &                  !< Biomass maintenace requirement as fraction of pc_0
+          mass_2_p,         &                  !< Organic matter mass to Phosphorus ratio
+          n_2_p,            &                  !< Nitrogen to Phosphorus ratio
+          o2_2_p,           &                  !< Oxygen to Phosphorus ratio
+          o2_min,           &                  !< Anaerobic respiration threshold
+          P_star,           &                  !< Pivotal phytoplankton concentration
+          pc_0,             &                  !< Maximum carbon-specific growth rate
+          phi_dop,          &                  !< Dissolved organic phosphorus fraction of uptake
+          phi_lg,           &                  !< Fraction of small phytoplankton converted to detritus
+          phi_sm,           &                  !< Fraction of large phytoplankton converted to detritus
+          remin_eff_fedet,  &                  !< Fractional Fedet remin efficiency during Pdet remin
+          remin_min,        &                  !< Minimum remineralization under low O2
+          rho_dense,        &                  !< Deep boundary density for exposure tracers
+          rho_light,        &                  !< Shallow boundary density for exposure tracers
+          rpcaco3,          &                  !< Ballast protection ratio by CaCO3
+          rplith,           &                  !< Ballast protection ratio by Lithogenic material
+          lith_flux,        &                  !< Seafloor flux of lithogenic material (global constant)
+          thetamax_hi,      &                  !< Maximum Chl:C ratio when iron-replete
+          thetamax_lo,      &                  !< Maximum Chl:C ratio when iron-limited
+          wsink0,           &                  !< Sinking rate at surface
+          wsinkz,           &                  !< Half saturation depth of sinking velocity increase
+          wsinkmax,         &                  !< Maximum sinking rate
+          z_burial,         &                  !< Depth scale of shelf scouring preventing organic burial
+          z_bact,           &                  !< Depth scale of colonization of bacteria for remineralization of sinking material
+          z_sed,            &                  !< Thickness of active sediment layer
+          inv_z_min                            !< Maximum remineralization length scale
 
      real    :: htotal_scale_lo, htotal_scale_hi, htotal_in
      real    :: Rho_0, a_0, a_1, a_2, a_3, a_4, a_5, b_0, b_1, b_2, b_3, c_0
@@ -459,10 +474,10 @@ namelist /generic_bling_nml/ co2_calc, do_13c, do_14c, do_carbon, do_carbon_pre,
      logical :: init_di13c, init_ca13csed
 
 ! carbon 13. Scalar variables
-     real  :: alpha13c_caco3,     &  ! Fractionation for Ca13CO2 uptake
-              alpha13c_askinetic, &  ! Air-sea kinetic fractionation for 13CO2
-              alpha13c_aq_g,      &  ! Equilibrium fractionation from gaseous to aqueous CO2   
-              alpha13c_lg            ! Organic matter fractionation of large phyto
+     real  :: alpha13c_caco3,     &  !< Fractionation for Ca13CO2 uptake
+              alpha13c_askinetic, &  !< Air-sea kinetic fractionation for 13CO2
+              alpha13c_aq_g,      &  !< Equilibrium 13C isotope fractionation from gaseous to aqueous CO2   
+              alpha13c_lg            !< Organic matter 13C isotope fractionation of large phyto
 !
 ! carbon 13. Pointers prognostic tracers
      real, dimension(:,:,:,:), pointer :: p_di13c, p_do13c
@@ -487,7 +502,6 @@ namelist /generic_bling_nml/ co2_calc, do_13c, do_14c, do_carbon, do_carbon_pre,
           j13ca_uptake  ,&
           j13ca_reminp  ,&
           fpo13c        ,&
-          wrk           ,&
           fca13co3      
 
 ! carbon 13. 2D variables
@@ -716,7 +730,6 @@ namelist /generic_bling_nml/ co2_calc, do_13c, do_14c, do_carbon, do_carbon_pre,
       id_alpha13c_DIC_g   = -1,  & ! Equilibrium fractionation from gaseous CO2 to DIC
       id_alpha13c_sm      = -1,  & ! Fractionation from DIC to the organic carbon pool of small phyto
       id_alpha13c_upt     = -1,  & ! Fractionation from DIC to the total organic carbon pool (large+small phyto) 
-      id_wrk              = -1,  & ! Work array
       id_alpha13c_poc     = -1,  & ! Fractionation from DIC to the POC pool
       id_dp13co2          = -1,  &
       id_13cfriver        = -1,  &
@@ -833,13 +846,13 @@ namelist /generic_bling_nml/ co2_calc, do_13c, do_14c, do_carbon, do_carbon_pre,
 
   !An auxiliary type for storing varible names
   type, public :: vardesc
-     character(len=fm_string_len) :: name     ! The variable name in a NetCDF file.
-     character(len=fm_string_len) :: longname ! The long name of that variable.
-     character(len=1)  :: hor_grid ! The hor. grid:  u, v, h, q, or 1.
-     character(len=1)  :: z_grid   ! The vert. grid:  L, i, or 1.
-     character(len=1)  :: t_grid   ! The time description: s, a, m, or 1.
-     character(len=fm_string_len) :: units    ! The dimensions of the variable.
-     character(len=1)  :: mem_size ! The size in memory: d or f.
+     character(len=fm_string_len) :: name     !< The variable name in a NetCDF file.
+     character(len=fm_string_len) :: longname !< The long name of that variable.
+     character(len=1)  :: hor_grid            !< The hor. grid:  u, v, h, q, or 1.
+     character(len=1)  :: z_grid              !< The vert. grid:  L, i, or 1.
+     character(len=1)  :: t_grid              !< The time description: s, a, m, or 1.
+     character(len=fm_string_len) :: units    !< The dimensions of the variable.
+     character(len=1)  :: mem_size            !< The size in memory: d or f.
   end type vardesc
 
   type(generic_BLING_type), save :: bling
@@ -900,7 +913,7 @@ write (stdlogunit, generic_bling_nml)
   endif
 
   if ((do_13c) .and. (do_carbon)) then
-    write (stdoutunit,*) trim(note_header), 'Simulating carbon-13'
+    write (stdoutunit,*) trim(note_header), 'Simulating 13C-cycling'
   else if ((do_13c) .and. .not. (do_carbon)) then
     call mpp_error(FATAL, trim(error_header) //        &
          'Do_13c requires do_carbon' // trim(name))
@@ -946,7 +959,7 @@ write (stdlogunit, generic_bling_nml)
 !#######################################################################
   ! <SUBROUTINE NAME="generic_BLING_init">
   !  <OVERVIEW>
-  !   Initialize the generic BLING module
+  !  Initialize the generic BLING module
   !  </OVERVIEW>
   !  <DESCRIPTION>
   !   This subroutine: 
@@ -962,6 +975,13 @@ write (stdlogunit, generic_bling_nml)
   !   Pointer to the head of generic tracer list.
   !  </IN>
   ! </SUBROUTINE>
+  !----------------------------------------------------
+!> \brief Initialize generic BLING module
+!!
+!! This subroutine adds the BLING tracers to the list of generic tracers passed to it 
+!! via utility subroutine g_tracer_add().  Adds all the parameters used by this module 
+!! via utility subroutine g_tracer_add_param(). 
+!! Allocates all work arrays used  in the module. 
   subroutine generic_BLING_init(tracer_list, force_update_fluxes)
     type(g_tracer_type), pointer :: tracer_list
     logical          ,intent(in) :: force_update_fluxes
@@ -984,10 +1004,10 @@ write (stdlogunit, generic_bling_nml)
   end subroutine generic_BLING_init
 
 !#######################################################################
-  !   Register diagnostic fields to be used in this module. 
-  !   Note that the tracer fields are automatically registered in user_add_tracers
-  !   User adds only diagnostics for fields that are not a member of g_tracer_type
-  !
+
+!> \brief  Register diagnostic fields to be used in this module. 
+!!   Note that the tracer fields are automatically registered in user_add_tracers
+!!   User adds only diagnostics for fields that are not a member of g_tracer_type
   subroutine generic_BLING_register_diag(diag_list)
     type(g_diag_type), pointer :: diag_list
     type(vardesc)  :: vardesc_temp
@@ -1458,12 +1478,6 @@ write (stdlogunit, generic_bling_nml)
     bling%id_alpha13c_poc = register_diag_field(package_name, vardesc_temp%name, axes(1:3),&
          init_time, vardesc_temp%longname,vardesc_temp%units, missing_value = missing_value1)
       endif                !CARBON13C>>
-
-    vardesc_temp = vardesc&
-    ("wrk","BLING work array 3D",'h','L','s','none','f')
-    bling%id_wrk = register_diag_field(package_name, vardesc_temp%name, axes(1:3), &
-         init_time, vardesc_temp%longname, vardesc_temp%units, missing_value = missing_value1)     
-
 
       if (do_carbon_pre) then                                     !<<DIC_PRE  
     vardesc_temp = vardesc&
@@ -2108,9 +2122,8 @@ write (stdlogunit, generic_bling_nml)
 
 !#######################################################################
   !
-  !   This is an internal sub, not a public interface.
-  !   Add all the parameters to be used in this module. 
-  !
+!>   This is an internal sub, not a public interface.
+!!   Add all the parameters to be used in BLING module. 
   subroutine user_add_params
 
     !Specify all parameters used in this modules.
@@ -2118,7 +2131,7 @@ write (stdlogunit, generic_bling_nml)
     !User adds one call for each parameter below!
     !User also adds the definition of each parameter in generic_BLING_params type
     !==============================================================    
-
+    ! 
     !=============
     !Block Starts: g_tracer_add_param
     !=============
@@ -2513,7 +2526,7 @@ write (stdlogunit, generic_bling_nml)
     call g_tracer_add_param('alpha13c_caco3'    , bling%alpha13c_caco3    , 1.001    ) ! unitless
     call g_tracer_add_param('alpha13c_askinetic', bling%alpha13c_askinetic, 0.99915  ) ! unitless
     call g_tracer_add_param('alpha13c_aq_g'     , bling%alpha13c_aq_g     , 0.998764 ) ! unitless
-    call g_tracer_add_param('alpha13c_lg'       , bling%alpha13c_lg       , 0.978    ) ! unitless (-22o/oo
+    call g_tracer_add_param('alpha13c_lg'       , bling%alpha13c_lg       , 0.978    ) ! unitless (-22o/oo)
     !
     !-----------------------------------------------------------------------
     ! Miscellaneous
@@ -2532,9 +2545,8 @@ write (stdlogunit, generic_bling_nml)
 
 !#######################################################################
   !
-  !   This is an internal sub, not a public interface.
-  !   Add all the tracers to be used in this module. 
-  !
+!> \brief   This is an internal sub, not a public interface.
+!!   Add all the tracers to be used in this module. 
   subroutine user_add_tracers(tracer_list)
     type(g_tracer_type), pointer :: tracer_list
     character(len=fm_string_len), parameter :: sub_name = 'user_add_tracers'
@@ -2821,7 +2833,7 @@ write (stdlogunit, generic_bling_nml)
 
           call g_tracer_add(tracer_list, package_name,                 &
              name           = 'di13c',                                 &
-             longname       = 'Dissolved Inorganic 13C)',              &
+             longname       = 'Dissolved Inorganic 13C',               &
              units          = 'mol/kg',                                &
              prog           = .true.,                                  &
              flux_gas       = .true.,                                  & 
@@ -2843,7 +2855,7 @@ write (stdlogunit, generic_bling_nml)
 
           call g_tracer_add(tracer_list, package_name,                 &
              name           = 'di13c',                                 &
-             longname       = 'Dissolved Inorganic 13C)',              &
+             longname       = 'Dissolved Inorganic 13C',               &
              units          = 'mol/kg',                                &
              prog           = .true.,                                  &
              flux_gas       = .true.,                                  & 
@@ -2900,7 +2912,7 @@ write (stdlogunit, generic_bling_nml)
 !#######################################################################
 ! <SUBROUTINE NAME="generic_BLING_update_from_coupler">
   !  <OVERVIEW>
-  !   Modify the values obtained from the coupler if necessary.
+  !  Modify the values obtained from the coupler if necessary.
   !  </OVERVIEW>
   !  <DESCRIPTION>
   !   Some tracer fields could be modified after values are obtained from the 
@@ -2914,6 +2926,9 @@ write (stdlogunit, generic_bling_nml)
   !   Pointer to the head of generic tracer list.
   !  </IN>
   ! </SUBROUTINE>
+  !---------------------------------------------------------------------
+!> \brief  Update tracer concentration fields from the ocean model source
+!! BLING currently does not use this
   subroutine generic_BLING_update_from_coupler(tracer_list)
     type(g_tracer_type), pointer :: tracer_list
 
@@ -2943,6 +2958,9 @@ write (stdlogunit, generic_bling_nml)
   !   Time step index to be used for %field
   !  </IN>
   ! </SUBROUTINE>
+  ! -------------------------------------------------------
+!> \brief Calculate and set coupler values at the surface
+!!
   subroutine generic_BLING_update_from_bottom(tracer_list, dt, tau)
     type(g_tracer_type), pointer :: tracer_list
     real,               intent(in) :: dt
@@ -3001,6 +3019,9 @@ write (stdlogunit, generic_bling_nml)
   !   Time step increment
   !  </IN>
   ! </SUBROUTINE>
+  !----------------------------------------------------------
+!> \brief This subroutine computes BLING sources minus sinks
+!!
   subroutine generic_BLING_update_from_source(tracer_list,Temp,Salt,&
        rho_dzt,dzt,hblt_depth,ilb,jlb,tau,dt,grid_dat,model_time,nbands,   &
        max_wavelength_band,sw_pen_band,opacity_band)
@@ -3123,9 +3144,11 @@ write (stdlogunit, generic_bling_nml)
     if (do_13c) then
 
       !---------------------------------------------
-      ! 13C-cycling requires the 3D field of CO2*
-      ! (not only at the surface as C-cycling)
-      ! to compute the organic matter fractionation
+      ! The 3D CO2* field is stored since it is 
+      ! required for 13C-cycling to compute the
+      ! organic matter fractionation
+      ! This contrasts with C-cycling, which only
+      ! needs to surface 2D CO2* field
       !---------------------------------------------
 
       do j = jsc, jec ; do i = isc, iec   !{
@@ -3277,7 +3300,7 @@ write (stdlogunit, generic_bling_nml)
 
           ! C13O2_alpha is CO2_alpha multiplied by the kinetic fractionation
           ! factor. The fractional abundance of 13CO2 is included in the c13o2 gas
-          ! concentration supplied by the script
+          ! concentration supplied by data_table
           bling%c13o2_alpha(i,j)=bling%co2_alpha(i,j)*bling%alpha13c_askinetic*bling%alpha13c_aq_g  
 
         enddo ; enddo !} i,j
@@ -3330,6 +3353,10 @@ write (stdlogunit, generic_bling_nml)
         if (do_13c) then
 
           if ( init_13c .and. bling%init_ca13csed) then
+            ! Conversion from d13C of cased to ca13csed concentration
+            ! This is done only once when 13C tracers are initialized from d13C fields
+            ! It can not be included in set_boundary_values as DI13C and DO13C 
+            ! because ca13csed is not a prognostic tracer and after that subroutine is called
             call g_tracer_get_values(tracer_list,'ca13csed' ,'field',bling%f_ca13csed  ,isd,jsd,ntau=1)
 
             k=1
@@ -3342,12 +3369,12 @@ write (stdlogunit, generic_bling_nml)
             enddo; enddo
             bling%init_ca13csed=.false.
 
-if (is_root_pe()) print*, 'CNT entered ca13csed init'
-
           else          
             call g_tracer_get_values(tracer_list,'ca13csed' ,'field',bling%f_ca13csed  ,isd,jsd,ntau=1, positive=.true.)
           endif
 
+          ! The 13C/C ratio of calcite in the active sediment is computed here
+          ! since when it is needed, cased has been already updated to the t+dt value
           do j=jsc,jec; do i=isc,iec
             bling%R13cased(i,j)=bling%f_ca13csed(i,j,1)/(epsln+bling%f_cased(i,j,1))
           enddo; enddo
@@ -3383,8 +3410,6 @@ if (is_root_pe()) print*, 'CNT entered ca13csed init'
     allocate(tmp_irr_band(nbands))
     do j = jsc, jec ; do i = isc, iec   !{
        bling%hblt_depth(i,j) = hblt_depth(i,j)
-
-bling%wrk(i,j,1)=hblt_depth(i,j)
 
        do nb=1,nbands !{
           if (max_wavelength_band(nb) .lt. 710) then !{
@@ -3748,7 +3773,10 @@ bling%wrk(i,j,1)=hblt_depth(i,j)
 
            R13dic = bling%f_di13c(i,j,k)/(epsln + bling%f_dic(i,j,k))
 
-!bling%wrk(i,j,k) = R13dic
+           ! The organic fractionation ratio is coded as according to Schmittner et al. 2013.
+           ! This factor is dependent on the fractionation between CO2* and DIC and the concentration
+           ! of CO2* in umol/L (Popp et al. 1989). A unit conversion is thus required between 
+           ! mol/kg to umol/L
 
            bling%alpha13c_sm(i,j,k) =  &
                             bling%alpha13c_aq_g/(bling%alpha13c_DIC_g(i,j,k))* &
@@ -3766,18 +3794,22 @@ bling%wrk(i,j,1)=hblt_depth(i,j)
            alpha13c_doc = ( bling%alpha13c_upt(i,j,k)-bling%alpha13c_poc(i,j,k)*bling%frac_pop(i,j,k) ) &
                           / ( 1 - bling%frac_pop(i,j,k) )
 
+           ! Production of organic 13C
            bling%j13c_uptake(i,j,k) = bling%jp_uptake(i,j,k)*bling%c_2_p &
                                      *R13dic*bling%alpha13c_upt(i,j,k)
 
+           ! Production of particulate 13C
            bling%j13c_poc(i,j,k) = bling%jpop(i,j,k)*bling%c_2_p &
                                   *R13dic*bling%alpha13c_poc(i,j,k)
 
+           ! Production of suspended & dissolved organic 13C
            bling%j13c_doc(i,j,k) = bling%jdop(i,j,k)*bling%c_2_p &
                                   *R13dic*alpha13c_doc
 
            bling%j13c_recycle(i,j,k) = bling%j13c_uptake(i,j,k) &
                   - bling%j13c_poc(i,j,k) - bling%j13c_doc(i,j,k)
 
+           ! Production of Ca13CO3
            bling%j13ca_uptake(i,j,k) = bling%jca_uptake(i,j,k) &
                                       *R13dic*bling%alpha13c_caco3  
                                    
@@ -3917,6 +3949,8 @@ bling%wrk(i,j,1)=hblt_depth(i,j)
       endif                                                   !RADIOCARBON>>
 
       if (do_13c) then                                       !<<CARBON-13
+
+        ! No fractionation is applied to the export of PO13C or Ca13CO2
 
         ! Surface layer
         do j = jsc, jec; do i = isc, iec   !{
@@ -4256,6 +4290,11 @@ bling%wrk(i,j,1)=hblt_depth(i,j)
             bling%fca13co3_to_sed(i,j) = bling%fca13co3(i,j,k)
 
             if (bury_caco3) then
+              ! 
+              !  Redissolution and burial ca13co3 fluxes are 
+              !  those of caco3 times the 13C/C ratio of cased
+              !  No fractionation is applied.
+              !
               bling%fca13csed_redis(i,j) =                        &
                 max(0.0, min(0.5*bling%f_ca13csed(i,j,1)/dt,      &
                 bling%fcased_redis(i,j)*bling%R13cased(i,j)))
@@ -4270,7 +4309,7 @@ bling%wrk(i,j,1)=hblt_depth(i,j)
                *dt*grid_tmask(i,j,k)
 
               ! The total flux of DI13C to the bottom water is the total organic 
-              ! flux (no burial) plus the dissolved Ca13CO3.
+              ! flux (no burial) plus the redissolved Ca13CO3.
               ! No fractionation applied
               bling%b_di13c(i,j) = -bling%fpo13c(i,j,k)-bling%fca13csed_redis(i,j)
             else
@@ -4282,8 +4321,6 @@ bling%wrk(i,j,1)=hblt_depth(i,j)
               ! The burial flux of PO13C is proportional to that of POC
               ! w/o applying any fractionation
               R13poc = bling%fpo13c(i,j,k)/(epsln+bling%fpop(i,j,k)*bling%c_2_p)
-
-bling%wrk(i,j,2)=R13poc
 
               bling%fpo13c_burial(i,j) = max ( 0.0 ,                          &
                                                min ( bling%fpo13c(i,j,k), &
@@ -5130,11 +5167,6 @@ bling%wrk(i,j,2)=R13poc
         used = g_send_data(bling%id_13cfriver,  bling%runoff_flux_di13c,             &
         model_time, rmask = grid_tmask(:,:,1),                                       &
         is_in=isc, js_in=jsc, ie_in=iec, je_in=jec)
-    if (bling%id_wrk .gt. 0)                                                         &
-         used = g_send_data(bling%id_wrk,    bling%wrk,                              &
-         model_time, rmask = grid_tmask,                                             & 
-         is_in=isc, js_in=jsc, ks_in=1,ie_in=iec, je_in=jec, ke_in=nk)
-
 
 !==============================================================================================================
 ! JGJ 2016/08/08 CMIP6 OcnBgchem Oyr and Omon: 3-D Marine Biogeochemical Tracer Fields
@@ -5718,8 +5750,10 @@ bling%wrk(i,j,2)=R13poc
   !   Layer thickness
   !  </IN>
   ! </SUBROUTINE>
-
   !User must provide the calculations for these boundary values.
+!#######################################################################
+!> \brief Calculate and set coupler values at the surface
+!!
   subroutine generic_BLING_set_boundary_values(tracer_list,SST,SSS,rho,ilb,jlb,tau,dzt)
     type(g_tracer_type),          pointer      :: tracer_list
     real, dimension(ilb:,jlb:),   intent(in)   :: SST, SSS 
@@ -5746,8 +5780,12 @@ bling%wrk(i,j,2)=R13poc
     call g_tracer_get_common(isc,iec,jsc,jec,isd,ied,jsd,jed,nk,ntau,grid_tmask=grid_tmask) 
 !----------------------------------------------------------
 !----------------------------------------------------------
-! d13C patch. To introduce somewhere else
 
+    ! Conversion from d13C of DIC and DOC to D13C and DO13C concentrations
+    ! This is done only once when 13C tracers are initialized from d13C fields
+    ! The conversion is done here as set_boundary_values is called before 
+    ! update_from_source in order to initialize air-sea exchange
+    ! 
     if (do_13c .and. init_13c .and. bling%init_di13c) then
  
       call g_tracer_get_pointer(tracer_list,'di13c'   , 'field', bling%p_di13c)
@@ -5761,8 +5799,6 @@ bling%wrk(i,j,2)=R13poc
       enddo; enddo; enddo !} i,j,k
 
       bling%init_di13c=.false.
-
-if (is_root_pe()) print*, 'CNT2 entered d13C init'
 
     endif
 !----------------------------------------------------------
@@ -5884,7 +5920,7 @@ if (is_root_pe()) print*, 'CNT2 entered d13C init'
   
             ! C13O2_alpha is CO2_alpha multiplied by the kinetic fractionation
             ! factor. The fractional abundance of 13CO2 is included in the c13o2 gas
-            ! concentration supplied by the script
+            ! concentration supplied by data_table
             c13o2_alpha(i,j)=co2_alpha(i,j)*bling%alpha13c_askinetic*bling%alpha13c_aq_g  
   
           enddo ; enddo !} i,j
@@ -6120,8 +6156,9 @@ if (is_root_pe()) print*, 'CNT2 entered d13C init'
   !   call generic_BLING_end
   !  </TEMPLATE>
   ! </SUBROUTINE>
-
-
+!------------------------------------------------------------------------
+!> \brief Subroutine to end the BLING module and deallocate all work arrays
+!!
   subroutine generic_BLING_end
     character(len=fm_string_len), parameter :: sub_name = 'generic_BLING_end'
     call user_deallocate_arrays
@@ -6132,6 +6169,8 @@ if (is_root_pe()) print*, 'CNT2 entered d13C init'
   !   This is an internal sub, not a public interface.
   !   Allocate all the work arrays to be used in this module.
   !
+!> \brief Internal subroutine to allocate arrays
+!!
   subroutine user_allocate_arrays
     integer :: isc,iec,jsc,jec,isd,ied,jsd,jed,nk,ntau, n
 
@@ -6338,7 +6377,6 @@ if (is_root_pe()) print*, 'CNT2 entered d13C init'
         endif                                                 
 
       endif                                                     !CARBON-13>>
-        allocate(bling%wrk             (isd:ied, jsd:jed, 1:nk));    bling%wrk=0.0
 
     endif                                                  !CARBON CYCLE>>
 
@@ -6349,6 +6387,8 @@ if (is_root_pe()) print*, 'CNT2 entered d13C init'
   !   This is an internal sub, not a public interface.
   !   Deallocate all the work arrays allocated by user_allocate_arrays.
   !
+!> \brief Internal subroutine to deallocate all work arrays
+!!
   subroutine user_deallocate_arrays
 
     deallocate(&
@@ -6537,8 +6577,7 @@ if (is_root_pe()) print*, 'CNT2 entered d13C init'
           bling%deltap_di13c     , &
           bling%runoff_flux_di13c, &
           bling%wc_vert_int_di13c, &
-          bling%wc_vert_int_do13c, &
-          bling%wrk                 )
+          bling%wc_vert_int_do13c   )
 
           if (bury_caco3) then
             deallocate (&
