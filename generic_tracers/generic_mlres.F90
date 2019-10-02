@@ -21,7 +21,9 @@ module generic_mlres
 
   use coupler_types_mod, only: coupler_2d_bc_type
   use field_manager_mod, only: fm_string_len
-  use mpp_mod, only : mpp_error, NOTE, WARNING, FATAL, stdout
+  !use mpp_mod, only : mpp_error, NOTE, WARNING, FATAL, stdout
+  use mpp_mod,           only: input_nml_file, mpp_error, stdlog, NOTE, WARNING, FATAL, stdout, mpp_chksum
+  use fms_mod,           only: write_version_number, open_namelist_file, check_nml_error, close_file
   use time_manager_mod, only : time_type
   use fm_util_mod,       only: fm_util_start_namelist, fm_util_end_namelist  
 
@@ -51,6 +53,9 @@ module generic_mlres
 
   real, parameter :: epsln=1.0e-30
 
+  real :: reset_time=1.0
+
+  namelist /generic_mlres_nml/ reset_time
   !
   !This type contains all the parameters and arrays used in this module.
   !
@@ -73,7 +78,33 @@ contains
   subroutine generic_mlres_register(tracer_list)
     type(g_tracer_type), pointer :: tracer_list
 
+integer                                                 :: ioun
+integer                                                 :: ierr
+integer                                                 :: io_status
+character(len=fm_string_len)                            :: name
+integer                                                 :: stdoutunit,stdlogunit
+
     character(len=fm_string_len), parameter :: sub_name = 'generic_mlres_register'
+
+! provide for namelist over-ride
+! This needs to go before the add_tracers in order to allow the namelist 
+! settings to switch tracers on and off.
+!
+stdoutunit=stdout();stdlogunit=stdlog()
+
+#ifdef INTERNAL_FILE_NML
+read (input_nml_file, nml=generic_mlres_nml, iostat=io_status)
+ierr = check_nml_error(io_status,'generic_mlres_nml')
+#else
+ioun = open_namelist_file()
+read  (ioun, generic_bling_nml,iostat=io_status)
+ierr = check_nml_error(io_status,'generic_mlres_nml')
+call close_file (ioun)
+#endif
+
+write (stdoutunit,'(/)')
+write (stdoutunit, generic_mlres_nml)
+write (stdlogunit, generic_mlres_nml)
 
     !Specify all prognostic and diagnostic tracers of this modules.
     call user_add_tracers(tracer_list)
@@ -275,7 +306,8 @@ contains
     do k = 1, nk; do j = jsc, jec ; do i = isc, iec
 
       if (zt(i,j,k) .le. hblt_depth(i,j) ) then
-        if ( p_mlres_inv_field(i,j,k,tau) .gt. 1 ) then
+        !if ( p_mlres_inv_field(i,j,k,tau) .gt. 1 ) then
+        if ( p_mlres_inv_field(i,j,k,tau) .gt. reset_time ) then
           ! Reset tracers
           p_mlres_field    (i,j,k,tau) = 0.0
           p_mlres_inv_field(i,j,k,tau) = 0.0
