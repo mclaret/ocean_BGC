@@ -198,6 +198,7 @@ module generic_BLING
   use fm_util_mod,       only: fm_util_start_namelist, fm_util_end_namelist  
   use constants_mod,     only: WTMCO2, WTMO2
   use fms_mod,           only: stdout, stdlog,mpp_pe,mpp_root_pe
+  use data_override_mod, only: data_override
 
   use g_tracer_utils, only : g_diag_type,g_tracer_type
   use g_tracer_utils, only : g_tracer_start_param_list,g_tracer_end_param_list
@@ -467,7 +468,8 @@ namelist /generic_bling_nml/ co2_calc, do_13c, do_14c, do_carbon, do_carbon_pre,
           wc_vert_int_dic  ,&
           wc_vert_int_doc  ,&
           wc_vert_int_di13c,&
-          wc_vert_int_do13c
+          wc_vert_int_do13c,&
+          pco2_atm, p13co2_atm
 
 !==============================================================================================================
 
@@ -733,7 +735,9 @@ namelist /generic_bling_nml/ co2_calc, do_13c, do_14c, do_carbon, do_carbon_pre,
       id_alpha13c_poc     = -1,  & ! Fractionation from DIC to the POC pool
       id_dp13co2          = -1,  &
       id_13cfriver        = -1,  &
-      id_fg13co2          = -1
+      id_fg13co2          = -1,  &
+      id_pco2atm          = -1,  &
+      id_p13co2atm        = -1
 
 !==============================================================================================================
 ! JGJ 2016/08/08 CMIP6 OcnBgchem 
@@ -1377,6 +1381,16 @@ write (stdlogunit, generic_bling_nml)
     vardesc_temp = vardesc&
     ("runoff_flux_di13c","Flux of Inorganic Carbon-13 Into Ocean Surface by Runoff",'h','1','s','mol m-2 s-1','f')
     bling%id_13cfriver = register_diag_field(package_name, vardesc_temp%name, axes(1:2), &
+         init_time, vardesc_temp%longname,vardesc_temp%units, missing_value = missing_value1)
+
+    vardesc_temp = vardesc&
+    ("pco2_atm","Atmospheric pCO2",'h','1','s','ppm','f')
+    bling%id_pco2atm = register_diag_field(package_name, vardesc_temp%name, axes(1:2), &
+         init_time, vardesc_temp%longname,vardesc_temp%units, missing_value = missing_value1)
+
+    vardesc_temp = vardesc&
+    ("p13co2_atm","Atmospheric p13CO2",'h','1','s','ppm','f')
+    bling%id_p13co2atm = register_diag_field(package_name, vardesc_temp%name, axes(1:2), &
          init_time, vardesc_temp%longname,vardesc_temp%units, missing_value = missing_value1)
 
         if (bury_caco3) then
@@ -2526,7 +2540,7 @@ write (stdlogunit, generic_bling_nml)
     call g_tracer_add_param('alpha13c_caco3'    , bling%alpha13c_caco3    , 1.001    ) ! unitless
     call g_tracer_add_param('alpha13c_askinetic', bling%alpha13c_askinetic, 0.99915  ) ! unitless
     call g_tracer_add_param('alpha13c_aq_g'     , bling%alpha13c_aq_g     , 0.998764 ) ! unitless
-    call g_tracer_add_param('alpha13c_lg'       , bling%alpha13c_lg       , 0.978    ) ! unitless (-22o/oo)
+    call g_tracer_add_param('alpha13c_lg'       , bling%alpha13c_lg       , 0.978    ) ! unitless (-22 o/oo)
     !
     !-----------------------------------------------------------------------
     ! Miscellaneous
@@ -4694,6 +4708,8 @@ write (stdlogunit, generic_bling_nml)
     if (do_carbon) then                                      !<<CARBON CYCLE
       call g_tracer_get_values(tracer_list,'dic','stf_gas',bling%stf_gas_dic,isd,jsd)
       call g_tracer_get_values(tracer_list,'dic','deltap',bling%deltap_dic,isd,jsd)
+
+      call data_override('OCN', 'pco2_atm', bling%pco2_atm(isc:iec,jsc:jec), model_time)
       if (bury_caco3) then
         call g_tracer_set_values(tracer_list,'cased',   'field',bling%f_cased     ,isd,jsd,ntau=1)
         call g_tracer_get_values(tracer_list,'dic','runoff_tracer_flux',bling%runoff_flux_dic,isd,jsd)
@@ -4706,6 +4722,7 @@ write (stdlogunit, generic_bling_nml)
            call g_tracer_get_values(tracer_list,'di13c','runoff_tracer_flux', bling%runoff_flux_di13c,isd,jsd)
            call g_tracer_set_values(tracer_list,'ca13csed','field', bling%f_ca13csed, isd,jsd,ntau=1)
          endif
+         call data_override('OCN', 'p13co2_atm', bling%p13co2_atm(isc:iec,jsc:jec), model_time)
       endif
       if (do_14c) &
         call g_tracer_get_values(tracer_list,'di14c','runoff_tracer_flux',bling%runoff_flux_di14c,isd,jsd)
@@ -4715,6 +4732,14 @@ write (stdlogunit, generic_bling_nml)
     !       Save variables for diagnostics
     !-----------------------------------------------------------------------
     !
+    if (bling%id_pco2atm .gt. 0)                                                 &
+         used = g_send_data(bling%id_pco2atm,          bling%pco2_atm,           &
+         model_time, rmask = grid_tmask(:,:,1),                                  & 
+         is_in=isc, js_in=jsc, ie_in=iec, je_in=jec)
+    if (bling%id_p13co2atm .gt. 0)                                               &
+         used = g_send_data(bling%id_p13co2atm,        bling%p13co2_atm,         &
+         model_time, rmask = grid_tmask(:,:,1),                                  & 
+         is_in=isc, js_in=jsc, ie_in=iec, je_in=jec)
     if (bling%id_alpha .gt. 0)                                                   &
          used = g_send_data(bling%id_alpha,          bling%alpha,                &
          model_time, rmask = grid_tmask,                                         & 
@@ -6297,6 +6322,7 @@ write (stdlogunit, generic_bling_nml)
       allocate(bling%wc_vert_int_c(isd:ied, jsd:jed));          bling%wc_vert_int_c=0.0
       allocate(bling%wc_vert_int_dic(isd:ied, jsd:jed));        bling%wc_vert_int_dic=0.0
       allocate(bling%wc_vert_int_doc(isd:ied, jsd:jed));        bling%wc_vert_int_doc=0.0
+      allocate(bling%pco2_atm         (isd:ied, jsd:jed));      bling%pco2_atm=0.0
 
       if (bury_caco3) then                                   !<<BURY CACO3  
         allocate(bling%f_cased(isd:ied, jsd:jed, 1:nk));        bling%f_cased=0.0
@@ -6363,6 +6389,7 @@ write (stdlogunit, generic_bling_nml)
         allocate(bling%runoff_flux_di13c(isd:ied, jsd:jed));         bling%runoff_flux_di13c=0.0
         allocate(bling%wc_vert_int_di13c(isd:ied, jsd:jed));         bling%wc_vert_int_di13c=0.0
         allocate(bling%wc_vert_int_do13c(isd:ied, jsd:jed));         bling%wc_vert_int_do13c=0.0
+        allocate(bling%p13co2_atm       (isd:ied, jsd:jed));         bling%p13co2_atm=0.0
 
         if (bury_caco3) then
           allocate(bling%f_ca13csed      (isd:ied, jsd:jed, 1:nk));    bling%f_ca13csed=0.0
@@ -6510,7 +6537,8 @@ write (stdlogunit, generic_bling_nml)
          bling%fcaco3_100,&  
          bling%wc_vert_int_c,&  
          bling%wc_vert_int_dic,&  
-         bling%wc_vert_int_doc  )
+         bling%wc_vert_int_doc,&
+         bling%pco2_atm  )
   
       if (bury_caco3) then                                     !<<BURY CACO3  
       deallocate(&
@@ -6577,7 +6605,8 @@ write (stdlogunit, generic_bling_nml)
           bling%deltap_di13c     , &
           bling%runoff_flux_di13c, &
           bling%wc_vert_int_di13c, &
-          bling%wc_vert_int_do13c   )
+          bling%wc_vert_int_do13c, &
+          bling%p13co2_atm   )
 
           if (bury_caco3) then
             deallocate (&
