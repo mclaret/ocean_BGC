@@ -494,8 +494,8 @@ namelist /generic_bling_nml/ co2_calc, do_13c, do_14c, do_carbon, do_carbon_pre,
           co2_star      ,&
           alpha13c_DIC_g,&
           alpha13c_sm   ,&
-          alpha13c_upt  ,&
-          alpha13c_poc  ,&
+          !alpha13c_upt  ,&
+          !alpha13c_poc  ,&
           j13c_uptake   ,&
           j13c_poc      ,&
           j13c_doc      ,&
@@ -731,8 +731,8 @@ namelist /generic_bling_nml/ co2_calc, do_13c, do_14c, do_carbon, do_carbon_pre,
       id_co2_star         = -1,  & ! CO2* concentration
       id_alpha13c_DIC_g   = -1,  & ! Equilibrium fractionation from gaseous CO2 to DIC
       id_alpha13c_sm      = -1,  & ! Fractionation from DIC to the organic carbon pool of small phyto
-      id_alpha13c_upt     = -1,  & ! Fractionation from DIC to the total organic carbon pool (large+small phyto) 
-      id_alpha13c_poc     = -1,  & ! Fractionation from DIC to the POC pool
+      !id_alpha13c_upt     = -1,  & ! Fractionation from DIC to the total organic carbon pool (large+small phyto) 
+      !id_alpha13c_poc     = -1,  & ! Fractionation from DIC to the POC pool
       id_dp13co2          = -1,  &
       id_13cfriver        = -1,  &
       id_fg13co2          = -1,  &
@@ -1482,15 +1482,15 @@ write (stdlogunit, generic_bling_nml)
     bling%id_alpha13c_sm = register_diag_field(package_name, vardesc_temp%name, axes(1:3),&
          init_time, vardesc_temp%longname,vardesc_temp%units, missing_value = missing_value1)
 
-    vardesc_temp = vardesc&
-    ("alpha13c_upt","Fractionation from DIC to the organic carbon pool of phytoplankton",'h','L','s','unitless','f') 
-    bling%id_alpha13c_upt = register_diag_field(package_name, vardesc_temp%name, axes(1:3),&
-         init_time, vardesc_temp%longname,vardesc_temp%units, missing_value = missing_value1)
+    !vardesc_temp = vardesc&
+    !("alpha13c_upt","Fractionation from DIC to the organic carbon pool of phytoplankton",'h','L','s','unitless','f') 
+    !bling%id_alpha13c_upt = register_diag_field(package_name, vardesc_temp%name, axes(1:3),&
+    !     init_time, vardesc_temp%longname,vardesc_temp%units, missing_value = missing_value1)
 
-    vardesc_temp = vardesc&
-    ("alpha13c_poc","Fractionation from DIC to the POC pool",'h','L','s','unitless','f') 
-    bling%id_alpha13c_poc = register_diag_field(package_name, vardesc_temp%name, axes(1:3),&
-         init_time, vardesc_temp%longname,vardesc_temp%units, missing_value = missing_value1)
+    !vardesc_temp = vardesc&
+    !("alpha13c_poc","Fractionation from DIC to the POC pool",'h','L','s','unitless','f') 
+    !bling%id_alpha13c_poc = register_diag_field(package_name, vardesc_temp%name, axes(1:3),&
+    !     init_time, vardesc_temp%longname,vardesc_temp%units, missing_value = missing_value1)
       endif                !CARBON13C>>
 
       if (do_carbon_pre) then                                     !<<DIC_PRE  
@@ -3796,29 +3796,37 @@ write (stdlogunit, generic_bling_nml)
                             bling%alpha13c_aq_g/(bling%alpha13c_DIC_g(i,j,k))* &
       (-0.017*log10(bling%co2_star(i,j,k)*bling%Rho_0*1000.d0+epsln)+1.0034)
 
-           bling%alpha13c_upt(i,j,k) = (  bling%frac_lg(i,j)*bling%alpha13c_lg           &
-                                        + (1-bling%frac_lg(i,j))*bling%alpha13c_sm(i,j,k) )
+           ! Different fractionation applied to large and small phyto.
+           !bling%alpha13c_upt(i,j,k) = (  bling%frac_lg(i,j)*bling%alpha13c_lg           &
+           !                             + (1-bling%frac_lg(i,j))*bling%alpha13c_sm(i,j,k) )
 
-           bling%alpha13c_poc(i,j,k) = (  bling%alpha13c_lg*bling%frac_lg(i,j)*bling%phi_lg &
-                                        + bling%alpha13c_sm(i,j,k)*(1-bling%frac_lg(i,j))   &
-                                          *bling%phi_sm                                     ) &
-                                       /(  bling%frac_lg(i,j)*bling%phi_lg    &
-                                         + (1-bling%frac_lg(i,j))*bling%phi_sm) 
+           !bling%alpha13c_poc(i,j,k) = (  bling%alpha13c_lg*bling%frac_lg(i,j)*bling%phi_lg &
+           !                             + bling%alpha13c_sm(i,j,k)*(1-bling%frac_lg(i,j))   &
+           !                               *bling%phi_sm                                     ) &
+           !                            /(  bling%frac_lg(i,j)*bling%phi_lg    &
+           !                              + (1-bling%frac_lg(i,j))*bling%phi_sm) 
 
-           alpha13c_doc = ( bling%alpha13c_upt(i,j,k)-bling%alpha13c_poc(i,j,k)*bling%frac_pop(i,j,k) ) &
-                          / ( 1 - bling%frac_pop(i,j,k) )
+           !alpha13c_doc = ( bling%alpha13c_upt(i,j,k)-bling%alpha13c_poc(i,j,k)*bling%frac_pop(i,j,k) ) &
+           !               / ( 1 - bling%frac_pop(i,j,k) )
 
            ! Production of organic 13C
+           !bling%j13c_uptake(i,j,k) = bling%jp_uptake(i,j,k)*bling%c_2_p &
+           !                          *R13dic*bling%alpha13c_upt(i,j,k)
+
            bling%j13c_uptake(i,j,k) = bling%jp_uptake(i,j,k)*bling%c_2_p &
-                                     *R13dic*bling%alpha13c_upt(i,j,k)
+                                     *R13dic*bling%alpha13c_sm(i,j,k)
 
            ! Production of particulate 13C
+           !bling%j13c_poc(i,j,k) = bling%jpop(i,j,k)*bling%c_2_p &
+           !                       *R13dic*bling%alpha13c_poc(i,j,k)
            bling%j13c_poc(i,j,k) = bling%jpop(i,j,k)*bling%c_2_p &
-                                  *R13dic*bling%alpha13c_poc(i,j,k)
+                                  *R13dic*bling%alpha13c_sm(i,j,k)
 
            ! Production of suspended & dissolved organic 13C
+           !bling%j13c_doc(i,j,k) = bling%jdop(i,j,k)*bling%c_2_p &
+           !                       *R13dic*alpha13c_doc
            bling%j13c_doc(i,j,k) = bling%jdop(i,j,k)*bling%c_2_p &
-                                  *R13dic*alpha13c_doc
+                                  *R13dic*bling%alpha13c_sm(i,j,k)
 
            bling%j13c_recycle(i,j,k) = bling%j13c_uptake(i,j,k) &
                   - bling%j13c_poc(i,j,k) - bling%j13c_doc(i,j,k)
@@ -5172,14 +5180,14 @@ write (stdlogunit, generic_bling_nml)
          used = g_send_data(bling%id_alpha13c_sm,    bling%alpha13c_sm,              &
          model_time, rmask = grid_tmask,                                             & 
          is_in=isc, js_in=jsc, ks_in=1,ie_in=iec, je_in=jec, ke_in=nk)
-    if (bling%id_alpha13c_upt .gt. 0)                                                &
-         used = g_send_data(bling%id_alpha13c_upt,    bling%alpha13c_upt,            &
-         model_time, rmask = grid_tmask,                                             & 
-         is_in=isc, js_in=jsc, ks_in=1,ie_in=iec, je_in=jec, ke_in=nk)
-    if (bling%id_alpha13c_poc .gt. 0)                                                &
-         used = g_send_data(bling%id_alpha13c_poc,    bling%alpha13c_poc,            &
-         model_time, rmask = grid_tmask,                                             & 
-         is_in=isc, js_in=jsc, ks_in=1,ie_in=iec, je_in=jec, ke_in=nk)
+    !if (bling%id_alpha13c_upt .gt. 0)                                                &
+         !used = g_send_data(bling%id_alpha13c_upt,    bling%alpha13c_upt,            &
+         !model_time, rmask = grid_tmask,                                             & 
+         !is_in=isc, js_in=jsc, ks_in=1,ie_in=iec, je_in=jec, ke_in=nk)
+    !if (bling%id_alpha13c_poc .gt. 0)                                                &
+    !     used = g_send_data(bling%id_alpha13c_poc,    bling%alpha13c_poc,            &
+    !     model_time, rmask = grid_tmask,                                             & 
+    !     is_in=isc, js_in=jsc, ks_in=1,ie_in=iec, je_in=jec, ke_in=nk)
     if (bling%id_dp13co2 .gt. 0)                                                     &
         used = g_send_data(bling%id_dp13co2,  bling%deltap_di13c,                    &
         model_time, rmask = grid_tmask(:,:,1),                                       &
@@ -6369,8 +6377,8 @@ write (stdlogunit, generic_bling_nml)
         allocate(bling%co2_star        (isd:ied, jsd:jed, 1:nk));    bling%co2_star=0.0 
         allocate(bling%alpha13c_DIC_g  (isd:ied, jsd:jed, 1:nk));    bling%alpha13c_DIC_g=0.0
         allocate(bling%alpha13c_sm     (isd:ied, jsd:jed, 1:nk));    bling%alpha13c_sm=0.0
-        allocate(bling%alpha13c_upt    (isd:ied, jsd:jed, 1:nk));    bling%alpha13c_upt=0.0
-        allocate(bling%alpha13c_poc    (isd:ied, jsd:jed, 1:nk));    bling%alpha13c_poc=0.0
+        !allocate(bling%alpha13c_upt    (isd:ied, jsd:jed, 1:nk));    bling%alpha13c_upt=0.0
+        !allocate(bling%alpha13c_poc    (isd:ied, jsd:jed, 1:nk));    bling%alpha13c_poc=0.0
         allocate(bling%j13c_uptake     (isd:ied, jsd:jed, 1:nk));    bling%j13c_uptake=0.0
         allocate(bling%j13c_poc        (isd:ied, jsd:jed, 1:nk));    bling%j13c_poc=0.0
         allocate(bling%j13c_doc        (isd:ied, jsd:jed, 1:nk));    bling%j13c_doc=0.0
@@ -6586,8 +6594,8 @@ write (stdlogunit, generic_bling_nml)
           bling%co2_star         , &
           bling%alpha13c_DIC_g   , &
           bling%alpha13c_sm      , &
-          bling%alpha13c_upt     , &
-          bling%alpha13c_poc     , &
+          !bling%alpha13c_upt     , &
+          !bling%alpha13c_poc     , &
           bling%j13c_uptake      , &
           bling%j13c_poc         , &
           bling%j13c_doc         , &

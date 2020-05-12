@@ -1053,7 +1053,7 @@ contains
 
     call data_override('OCN', 'delta_14catm', delta_14catm(isc:iec,jsc:jec), model_time)
     do j = jsc, jec ; do i = isc, iec  !{
-       abiotic%ab14co2_csurf(i,j) = abiotic%abco2_csurf(i,j) * &
+       ab14co2_csurf(i,j) = abco2_csurf(i,j) * &
                                    (dissi14cabio_field(:,:,1,tau)/(dissicabio_field(:,:,1,tau) + epsln))
        ab14co2_alpha(i,j) = abco2_alpha(i,j) * (1.0 + delta_14catm(i,j) * 1.0e-03)
     enddo; enddo ; !} i, j
