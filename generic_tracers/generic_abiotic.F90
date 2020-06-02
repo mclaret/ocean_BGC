@@ -822,7 +822,7 @@ contains
     call data_override('OCN', 'delta_14catm', abiotic%delta_14catm(isc:iec,jsc:jec), model_time)
     do j = jsc, jec ; do i = isc, iec  !{
        abiotic%ab14co2_csurf(i,j) = abiotic%abco2_csurf(i,j) * &
-                                   (abiotic%f_dissi14cabio(:,:,k)/(abiotic%f_dissicabio(:,:,k) + epsln))
+                                   (abiotic%f_dissi14cabio(i,j,1)/(abiotic%f_dissicabio(i,j,1) + epsln))
        abiotic%ab14co2_alpha(i,j) = abiotic%abco2_alpha(i,j) * &
                                     (1.0 + abiotic%delta_14catm(i,j) * 1.0e-03)
     enddo; enddo ; !} i, j
@@ -1044,19 +1044,19 @@ contains
             co2star=abco2_csurf(:,:), alpha=abco2_alpha(:,:),  &
             pCO2surf=abiotic%abpco2_csurf(:,:))
 
-    ! Update csurf and alpha based on the atmospheric 14C/12C ratio
+       ! Update csurf and alpha based on the atmospheric 14C/12C ratio
 
-    ! The 14C surface concentration (ab14co2_csurf, 14CO2*) is proportional to the 14C surface concentration
-    ! times the ratio of the *ocean* surface carbon concentration (i.e. DI14C/DIC). The 14C solubility (ab14co2_alpha) 
-    ! is proportional to abco2_alpha times the 14C to C ratio of the *atmos* carbon concentration as the 
-    ! ocean carbon solubility mainly depends on temperature and the atmos partial pressure of the gas.
+       ! The 14C surface concentration (ab14co2_csurf, 14CO2*) is proportional to the 14C surface concentration
+       ! times the ratio of the *ocean* surface carbon concentration (i.e. DI14C/DIC). The 14C solubility (ab14co2_alpha) 
+       ! is proportional to abco2_alpha times the 14C to C ratio of the *atmos* carbon concentration as the 
+       ! ocean carbon solubility mainly depends on temperature and the atmos partial pressure of the gas.
 
-    call data_override('OCN', 'delta_14catm', delta_14catm(isc:iec,jsc:jec), model_time)
-    do j = jsc, jec ; do i = isc, iec  !{
-       ab14co2_csurf(i,j) = abco2_csurf(i,j) * &
-                                   (dissi14cabio_field(:,:,1,tau)/(dissicabio_field(:,:,1,tau) + epsln))
-       ab14co2_alpha(i,j) = abco2_alpha(i,j) * (1.0 + delta_14catm(i,j) * 1.0e-03)
-    enddo; enddo ; !} i, j
+       call data_override('OCN', 'delta_14catm', delta_14catm(isc:iec,jsc:jec), model_time)
+       do j = jsc, jec ; do i = isc, iec  !{
+          ab14co2_csurf(i,j) = abco2_csurf(i,j) * &
+                              (dissi14cabio_field(i,j,1,tau)/(dissicabio_field(i,j,1,tau) + epsln))
+          ab14co2_alpha(i,j) = abco2_alpha(i,j) * (1.0 + delta_14catm(i,j) * 1.0e-03)
+       enddo; enddo ; !} i, j
 
        call g_tracer_set_values(tracer_list,'ab_htotal' ,'field',htotal_field,isd,jsd,ntau=1)
        call g_tracer_set_values(tracer_list,'ab_htotal14c','field',htotal14c_field,isd,jsd,ntau=1)
