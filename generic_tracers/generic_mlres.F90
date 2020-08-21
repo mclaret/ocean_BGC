@@ -53,9 +53,11 @@ module generic_mlres
 
   real, parameter :: epsln=1.0e-30
 
-  real :: reset_time=1.0
+  real :: reset_time_mlres1=1.0
+  real :: reset_time_mlres2=10.0
+  real :: reset_time_mlres3=100.0
 
-  namelist /generic_mlres_nml/ reset_time
+  namelist /generic_mlres_nml/ reset_time_mlres1, reset_time_mlres2, reset_time_mlres3
   !
   !This type contains all the parameters and arrays used in this module.
   !
@@ -220,19 +222,48 @@ write (stdlogunit, generic_mlres_nml)
     !diag_tracers: none
     !
     !age
-    call g_tracer_add(tracer_list,package_name,               &
-         name          = 'mlres',                             &
-         longname      = 'residence time inside mixed layer', &
-         units         = 'years',                             &
-         init_value    = 0.0,                                 &
+    call g_tracer_add(tracer_list,package_name,                &
+         name          = 'mlres1',                             &
+         longname      = 'residence time inside mixed layer',  &
+         units         = 'years',                              &
+         init_value    = 0.0,                                  &
          prog          = .true.)
 
     call g_tracer_add(tracer_list,package_name,                &
-         name          = 'mlres_inv',                          &
+         name          = 'mlres1_inv',                         &
          longname      = 'residence time outside mixed layer', &
          units         = 'years',                              &
          init_value    = 0.0,                                  &
          prog          = .true.)
+    !
+    call g_tracer_add(tracer_list,package_name,                 &
+         name          = 'mlres2',                              &
+         longname      = 'residence time inside mixed layer 2', &
+         units         = 'years',                               &
+         init_value    = 0.0,                                   &
+         prog          = .true.)
+
+    call g_tracer_add(tracer_list,package_name,                  &
+         name          = 'mlres2_inv',                           &
+         longname      = 'residence time outside mixed layer 2', &
+         units         = 'years',                                &
+         init_value    = 0.0,                                    &
+         prog          = .true.)
+    !
+    call g_tracer_add(tracer_list,package_name,                 &
+         name          = 'mlres3',                              &
+         longname      = 'residence time inside mixed layer 3', &
+         units         = 'years',                               &
+         init_value    = 0.0,                                   &
+         prog          = .true.)
+
+    call g_tracer_add(tracer_list,package_name,                  &
+         name          = 'mlres3_inv',                           &
+         longname      = 'residence time outside mixed layer 3', &
+         units         = 'years',                                &
+         init_value    = 0.0,                                    &
+         prog          = .true.)
+
 
 
   end subroutine user_add_tracers
@@ -283,7 +314,9 @@ write (stdlogunit, generic_mlres_nml)
     integer                                 :: isc,iec,jsc,jec,isd,ied,jsd,jed,nk,ntau,i,j,k
     real, parameter                         :: secs_in_year_r = 1.0 / (86400.0 * 365.25)
     real, dimension(:,:,:)  , pointer       :: grid_tmask
-    real, dimension(:,:,:,:), pointer       :: p_mlres_field, p_mlres_inv_field
+    real, dimension(:,:,:,:), pointer       :: p_mlres1_field, p_mlres1_inv_field
+    real, dimension(:,:,:,:), pointer       :: p_mlres2_field, p_mlres2_inv_field
+    real, dimension(:,:,:,:), pointer       :: p_mlres3_field, p_mlres3_inv_field
 
     real, dimension(:,:,:), allocatable :: zt
 
@@ -291,8 +324,12 @@ write (stdlogunit, generic_mlres_nml)
 
     allocate( zt(isd:ied,jsd:jed,nk) ); zt=0.0
 
-    call g_tracer_get_pointer(tracer_list, 'mlres'    , 'field', p_mlres_field    )
-    call g_tracer_get_pointer(tracer_list, 'mlres_inv', 'field', p_mlres_inv_field)
+    call g_tracer_get_pointer(tracer_list, 'mlres1'    , 'field', p_mlres1_field    )
+    call g_tracer_get_pointer(tracer_list, 'mlres1_inv', 'field', p_mlres1_inv_field)
+    call g_tracer_get_pointer(tracer_list, 'mlres2'    , 'field', p_mlres2_field    )
+    call g_tracer_get_pointer(tracer_list, 'mlres2_inv', 'field', p_mlres2_inv_field)
+    call g_tracer_get_pointer(tracer_list, 'mlres3'    , 'field', p_mlres3_field    )
+    call g_tracer_get_pointer(tracer_list, 'mlres3_inv', 'field', p_mlres3_inv_field)
 
     ! Compute depth of the bottom of the cell
     zt = 0.0
@@ -306,16 +343,35 @@ write (stdlogunit, generic_mlres_nml)
     do k = 1, nk; do j = jsc, jec ; do i = isc, iec
 
       if (zt(i,j,k) .le. hblt_depth(i,j) ) then
-        !if ( p_mlres_inv_field(i,j,k,tau) .gt. 1 ) then
-        if ( p_mlres_inv_field(i,j,k,tau) .gt. reset_time ) then
-          ! Reset tracers
-          p_mlres_field    (i,j,k,tau) = 0.0
-          p_mlres_inv_field(i,j,k,tau) = 0.0
+
+        if ( p_mlres1_inv_field(i,j,k,tau) .gt. reset_time_mlres1 ) then
+          ! Reset ML tracer 1
+          p_mlres1_field    (i,j,k,tau) = 0.0
+          p_mlres1_inv_field(i,j,k,tau) = 0.0
         else
-          p_mlres_field(i,j,k,tau) = p_mlres_field(i,j,k,tau) + dt*secs_in_year_r*grid_tmask(i,j,k)
+          p_mlres1_field(i,j,k,tau) = p_mlres1_field(i,j,k,tau) + dt*secs_in_year_r*grid_tmask(i,j,k)
         endif
+
+        if ( p_mlres2_inv_field(i,j,k,tau) .gt. reset_time_mlres2 ) then
+          ! Reset tracers
+          p_mlres2_field    (i,j,k,tau) = 0.0
+          p_mlres2_inv_field(i,j,k,tau) = 0.0
+        else
+          p_mlres2_field(i,j,k,tau) = p_mlres2_field(i,j,k,tau) + dt*secs_in_year_r*grid_tmask(i,j,k)
+        endif
+
+        if ( p_mlres3_inv_field(i,j,k,tau) .gt. reset_time_mlres3 ) then
+          ! Reset tracers
+          p_mlres3_field    (i,j,k,tau) = 0.0
+          p_mlres3_inv_field(i,j,k,tau) = 0.0
+        else
+          p_mlres3_field(i,j,k,tau) = p_mlres3_field(i,j,k,tau) + dt*secs_in_year_r*grid_tmask(i,j,k)
+        endif
+
       else
-        p_mlres_inv_field(i,j,k,tau) = p_mlres_inv_field(i,j,k,tau) + dt*secs_in_year_r*grid_tmask(i,j,k)
+        p_mlres1_inv_field(i,j,k,tau) = p_mlres1_inv_field(i,j,k,tau) + dt*secs_in_year_r*grid_tmask(i,j,k)
+        p_mlres2_inv_field(i,j,k,tau) = p_mlres2_inv_field(i,j,k,tau) + dt*secs_in_year_r*grid_tmask(i,j,k)
+        p_mlres3_inv_field(i,j,k,tau) = p_mlres3_inv_field(i,j,k,tau) + dt*secs_in_year_r*grid_tmask(i,j,k)
       endif
 
     enddo; enddo; enddo !} i,j,k
