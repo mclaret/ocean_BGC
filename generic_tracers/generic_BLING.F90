@@ -1,4 +1,7 @@
 !----------------------------------------------------------------
+! <CONTACT EMAIL="mclaret@uw.edu"> Mariona Claret
+! </CONTACT>
+!
 ! <CONTACT EMAIL="Eric.Galbraith@mcgill.ca"> Eric D. Galbraith
 ! </CONTACT>
 !
@@ -22,6 +25,8 @@
 !   have been quite well tested, the other components should be viewed as
 !   developmental at this point. There may still be some bugs, particularly
 !   in the CaCO3 burial scheme. EDG June 4, 2009
+!
+!   13C-cycling has been added via two additionnal tracers: DI13C and DO13C. MC May, 2019
 !
 ! </OVERVIEW>
 !<DESCRIPTION>
